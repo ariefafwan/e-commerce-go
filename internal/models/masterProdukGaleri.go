@@ -8,14 +8,14 @@ import (
 )
 
 type MasterProdukGaleri struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	IDProduk  uuid.UUID
-	Gambar    string
-	Urutan    uint8
-	CreatedAt time.Time
+	ID        uuid.UUID `gorm:"type:char(36);primaryKey"`
+	IDProduk  uuid.UUID	`gorm:"type:char(36);not null;"`
+	Gambar    string	`gorm:"type:varchar(255);not null;"`
+	Urutan    uint8		`gorm:"not null;"`
+	CreatedAt time.Time	
 	UpdatedAt time.Time
 
-	Produk    MasterProduk `gorm:"foreignKey:IDProduk"`
+	DataProduk    MasterProduk `gorm:"foreignKey:IDProduk;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (MasterProdukGaleri) TableName() string {

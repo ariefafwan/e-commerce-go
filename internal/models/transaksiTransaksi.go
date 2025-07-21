@@ -1,32 +1,69 @@
 package models
 
 import (
+	"database/sql/driver"
 	"time"
+
+	"fmt"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
+type StatusTransaksi string
+
+const (
+    Pending    	StatusTransaksi = "Pending"
+    Paid 		StatusTransaksi = "Admin"
+	Complete 	StatusTransaksi = "Complete"
+)
+
+func (ct *StatusTransaksi) Scan(value interface{}) error {
+    s, ok := value.(string)
+    if !ok {
+        b, ok := value.([]byte)
+        if !ok {
+            return fmt.Errorf("gagal scan status: status tidak dikenal")
+        }
+        s = string(b)
+    }
+    switch StatusTransaksi(s) {
+		case Pending, Paid, Complete:
+			*ct = StatusTransaksi(s) // Jika valid, tetapkan nilainya
+			return nil
+		default:
+			// Jika tidak valid, kembalikan error
+			return fmt.Errorf("nilai status tidak valid: %s", s)
+    }
+}
+
+func (ct StatusTransaksi) Value() (driver.Value, error) {
+    return string(ct), nil
+}
+
 type Transaksi struct {
-	ID                 uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Status             string    `gorm:"type:enum('Pending','Paid','Complete')"`
-	IDPelanggan        uuid.UUID
-	IDAlamatPelanggan  uuid.UUID
-	TotalHarga         float64
-	TotalOngkir        float64
-	Pajak              float64
-	MulaiTransaksi     time.Time
-	SelesaiTransaksi   time.Time
+	ID                 uuid.UUID `gorm:"type:char(36);primaryKey"`
+	NoInvoice          string	 `gorm:"type:varchar(20);not null;uniqueIndex"`
+	IDPelanggan        uuid.UUID `gorm:"type:char(36);not null;"`
+	IDAlamatPelanggan  uuid.UUID `gorm:"type:char(36);not null;"`
+	TotalHarga         float64	 `gorm:"type:float;not null;;"`
+	TotalOngkir        float64	 `gorm:"type:float;not null;;"`
+	JumlahItem		   int16	 `gorm:"type:int;not null;;"`
+	Pajak              float64	 `gorm:"type:float;not null;;"`
+	Notes              string	 `gorm:"type:text;not null;"`
+	Status             StatusTransaksi 	`gorm:"type:varchar(20);not null;default:Pending"`
+	PaidAt     		   time.Time
+	CompleteAt         time.Time
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 
-	Pelanggan          MasterPelanggan `gorm:"foreignKey:IDPelanggan"`
-	Alamat             MasterAlamatPelanggan `gorm:"foreignKey:IDAlamatPelanggan"`
-	Items              []TransaksiItem
+	DataPelanggan      MasterPelanggan 			`gorm:"foreignKey:IDPelanggan;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	DataAlamat         MasterAlamatPelanggan 	`gorm:"foreignKey:IDAlamatPelanggan;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	DataItems          []TransaksiItem			`gorm:"foreignKey:IDTransaksi"`
 }
 
 func (Transaksi) TableName() string {
-	return "transaksi_transaksi"
+	return "transaksi"
 }
 
 func (t *Transaksi) BeforeCreate(tx *gorm.DB) (err error) {

@@ -8,16 +8,17 @@ import (
 )
 
 type TransaksiKeranjangItem struct {
-	ID              uuid.UUID `gorm:"type:uuid;primaryKey"`
-	IDKeranjang     uuid.UUID
-	IDProduk        uuid.UUID
-	IDVariantProduk uuid.UUID
+	ID              uuid.UUID 	`gorm:"type:char(36);primaryKey"`
+	IDKeranjang     uuid.UUID	`gorm:"type:char(36);not null;"`
+	IDProduk        uuid.UUID	`gorm:"type:char(36);not null;"`
+	IDVariantProduk uuid.UUID	`gorm:"type:char(36);not null;"`
+	Quantity        int			`gorm:"type:int;not null;"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 
-	Keranjang       TransaksiKeranjang `gorm:"foreignKey:IDKeranjang"`
-	Produk          MasterProduk       `gorm:"foreignKey:IDProduk"`
-	Variant         MasterProdukVariant `gorm:"foreignKey:IDVariantProduk"`
+	DataKeranjang   TransaksiKeranjang 	`gorm:"foreignKey:IDKeranjang;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataProduk      MasterProduk       	`gorm:"foreignKey:IDProduk;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	DataVariant     MasterProdukVariant `gorm:"foreignKey:IDVariantProduk;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 }
 
 func (TransaksiKeranjangItem) TableName() string {

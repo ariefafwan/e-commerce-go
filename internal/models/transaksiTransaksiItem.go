@@ -8,23 +8,23 @@ import (
 )
 
 type TransaksiItem struct {
-	ID              uuid.UUID `gorm:"type:uuid;primaryKey"`
-	IDTransaksi     uuid.UUID
-	IDProduk        uuid.UUID
-	IDVariantProduk uuid.UUID
-	Harga           float64
-	Quantity        int
-	Subtotal        float64
+	ID              uuid.UUID `gorm:"type:char(36);primaryKey"`
+	IDTransaksi     uuid.UUID `gorm:"type:char(36);not null;"`
+	IDProduk        uuid.UUID `gorm:"type:char(36);not null;"`
+	IDVariantProduk uuid.UUID `gorm:"type:char(36);not null;"`
+	Harga           float64		`gorm:"type:float;not null;"`
+	Quantity        int			`gorm:"type:int;not null;"`
+	Subtotal        float64		`gorm:"type:float;not null;"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 
-	Transaksi       Transaksi 			`gorm:"foreignKey:IDTransaksi"`
-	Produk          MasterProduk       	`gorm:"foreignKey:IDProduk"`
-	Variant         MasterProdukVariant `gorm:"foreignKey:IDVariantProduk"`
+	DataTransaksi   Transaksi 			`gorm:"foreignKey:IDTransaksi;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataProduk      MasterProduk       	`gorm:"foreignKey:IDProduk;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	DataVariant     MasterProdukVariant `gorm:"foreignKey:IDVariantProduk;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 }
 
 func (TransaksiItem) TableName() string {
-	return "transaksi_transaksi_item"
+	return "transaksi_item"
 }
 
 func (ti *TransaksiItem) BeforeCreate(tx *gorm.DB) (err error) {

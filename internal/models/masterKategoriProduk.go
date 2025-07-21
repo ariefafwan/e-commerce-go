@@ -8,14 +8,16 @@ import (
 )
 
 type MasterKategoriProduk struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	ParentID  *uuid.UUID
-	Nama      string
-	Slug      string `gorm:"uniqueIndex"`
-	CreatedAt time.Time
+	ID        uuid.UUID 	`gorm:"type:char(36);primaryKey"`
+	ParentID  *uuid.UUID	`gorm:"type:char(36);"`
+	Nama      string		`gorm:"type:varchar(50);not null;uniqueIndex"`
+	Slug      string 		`gorm:"uniqueIndex"`
+	Urutan 	  uint8			`gorm:"not null;"`
+	CreatedAt time.Time		
 	UpdatedAt time.Time
 
-	Children  []MasterKategoriProduk `gorm:"foreignKey:ParentID"`
+	DataParent  *MasterKategoriProduk 	`gorm:"foreignKey:ParentID"`
+	DataProduk  []MasterProduk 		   	`gorm:"many2many:master_produk_kategori_produk;joinForeignKey:IDKategori;JoinReferences:IDProduk"`
 }
 
 func (MasterKategoriProduk) TableName() string {

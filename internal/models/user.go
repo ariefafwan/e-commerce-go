@@ -1,23 +1,54 @@
 package models
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
+type RoleUser string
+
+const (
+    Pelanggan    RoleUser = "Pelanggan"
+    Admin 		 RoleUser = "Admin"
+)
+
+func (ct *RoleUser) Scan(value interface{}) error {
+    s, ok := value.(string)
+    if !ok {
+        b, ok := value.([]byte)
+        if !ok {
+            return fmt.Errorf("gagal scan RoleUser: tipe data tidak dikenal")
+        }
+        s = string(b)
+    }
+    switch RoleUser(s) {
+		case Pelanggan, Admin:
+			*ct = RoleUser(s) // Jika valid, tetapkan nilainya
+			return nil
+		default:
+			// Jika tidak valid, kembalikan error
+			return fmt.Errorf("nilai RoleUser tidak valid: %s", s)
+    }
+}
+
+func (ct RoleUser) Value() (driver.Value, error) {
+    return string(ct), nil
+}
+
 type User struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Role      string    `gorm:"type:enum('Pelanggan','Admin')"`
-	Nama      string
+	Role      RoleUser 	`gorm:"type:varchar(20);not null;default:Pelanggan"`
+	Nama      string	`gorm:"type:varchar(50);not null;"`
 	Email     string    `gorm:"uniqueIndex"`
-	Phone     string
-	Password  string
+	Password  string	`gorm:"type:varchar(255);not null;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	Tokens    []PersonalAccessToken
+	DataPelanggan 	*MasterPelanggan 		`gorm:"foreignKey:IDUser"`
+	Tokens    		[]PersonalAccessToken	`gorm:"foreignKey:IDUser"`
 }
 
 func (User) TableName() string {

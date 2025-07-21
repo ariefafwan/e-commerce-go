@@ -8,15 +8,14 @@ import (
 )
 
 type MasterToko struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Nama       string
-	Alamat     string
-	Gambar     string
-	NomorToko  string
-	AturanPajak float64
+	ID         uuid.UUID 	`gorm:"type:char(36);primaryKey"`
+	Nama       string		`gorm:"type:varchar(50);not null;uniqueIndex"`
+	Alamat     string		`gorm:"type:text;not null;"`
+	Gambar     string		`gorm:"type:varchar(50);not null;"`
+	NomorToko  string		`gorm:"type:varchar(20);not null;"`
+	AturanPajak float64		`gorm:"type:float;not null;"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
 }
 
 func (MasterToko) TableName() string {
