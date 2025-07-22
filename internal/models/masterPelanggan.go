@@ -15,10 +15,10 @@ type MasterPelanggan struct {
 	Phone         string	`gorm:"type:varchar(20);not null;"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-	DataAlamatPelanggan  	[]MasterAlamatPelanggan	`gorm:"foreignKey:IDPelanggan"`
-	DataKeranjang     		[]TransaksiKeranjang	`gorm:"foreignKey:IDPelanggan"`
-	DataTransaksi     		[]Transaksi				`gorm:"foreignKey:IDPelanggan"`
-	DataUser   				User 					`gorm:"foreignKey:IDUser;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	DataAlamat  	[]MasterAlamatPelanggan	`gorm:"foreignKey:IDPelanggan"`
+	DataKeranjang   []TransaksiKeranjang	`gorm:"foreignKey:IDPelanggan"`
+	DataTransaksi   []Transaksi				`gorm:"foreignKey:IDPelanggan"`
+	DataUser   		User 					`gorm:"foreignKey:IDUser;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
 
 func (MasterPelanggan) TableName() string {

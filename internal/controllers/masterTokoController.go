@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"e-commerce-go/external/cloudinary"
 	"e-commerce-go/internal/helpers"
 	"e-commerce-go/internal/models"
 	"e-commerce-go/internal/repositories"
@@ -57,12 +58,12 @@ func (mt *MasterTokoController) UpdateToko(c *gin.Context) {
 			helpers.Error(c, http.StatusBadRequest, nil, "File logo harus berupa gambar JPEG/JPG atau PNG")
 			return
 		}
-		filename, err := helpers.UploadImage(req.Gambar, "Toko")
+		filename, err := cloudinary.UploadImage(req.Gambar, "Toko")
 		if err != nil {
 			helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal Saat Menyimpan Gambar")
 			return
 		}
-		helpers.DeleteImage(fmt.Sprintf("Toko/%s", existing.Gambar))
+		cloudinary.DeleteImage(fmt.Sprintf("Toko/%s", existing.Gambar))
 		existing.Gambar = filename
 	}
 
@@ -77,10 +78,10 @@ func (mt *MasterTokoController) UpdateToko(c *gin.Context) {
 	if err := pkg.DB.Transaction(func(tx *gorm.DB) error {
 		return mt.Repo.Update(id, updatedModel)
 	}); err != nil {
-		helpers.DeleteImage(existing.Gambar)
+		cloudinary.DeleteImage(existing.Gambar)
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal mengupdate data")
 		return
 	}
 	
-	helpers.Success(c, http.StatusOK, existing, "Success")
+	helpers.Success(c, http.StatusOK, nil, "Success")
 }

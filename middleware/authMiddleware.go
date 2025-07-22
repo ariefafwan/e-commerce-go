@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"e-commerce-go/internal/helpers"
+	"e-commerce-go/internal/models"
+	"e-commerce-go/pkg"
 	"net/http"
 	"strings"
 	"time"
@@ -9,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func JWTMiddleware() gin.HandlerFunc {
+func AuthMiddleware(roles ...any) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		auth := ctx.GetHeader("Authorization")
 		if !strings.HasPrefix(auth, "Bearer ") {
@@ -34,8 +36,21 @@ func JWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set UserID ke context
-		ctx.Set("userID", claims.UserID)
-		ctx.Next()
+		var pat models.User
+		err = pkg.DB.Where("id = ?", claims.UserID).First(&pat).Error
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			return 
+		}
+
+		for _, r := range roles {
+			if pat.Role == r {
+				ctx.Set("user", pat)
+				ctx.Next()
+				return
+			}
+		}
+
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied, you don't have access to this resource"})
 	}
 }

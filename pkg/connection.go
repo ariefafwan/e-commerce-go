@@ -1,20 +1,13 @@
 package pkg
 
 import (
-	"e-commerce-go/internal/models"
 	"fmt"
 	"log"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-)
 
-const (
-    DB_HOST     = "localhost"
-    DB_USER     = "postgres"
-    DB_PASSWORD = ""
-    DB_NAME     = "sanbercode"
-    DB_PORT     = "5432"
+	"e-commerce-go/internal/models"
 )
 
 var DB *gorm.DB
@@ -22,7 +15,11 @@ var DB *gorm.DB
 func ConnectDB() {
     dsn := fmt.Sprintf(
         "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=public",
-        DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT,
+        GetEnv("DB_HOST", "localhost"),
+        GetEnv("DB_USER", "postgres"),
+        GetEnv("DB_PASSWORD", "postgres"),
+        GetEnv("DB_NAME", "e-commerce"),
+        GetEnv("DB_PORT", "5432"),
     )
 
     db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
@@ -31,7 +28,15 @@ func ConnectDB() {
     }
 
     DB = db
-    err = DB.AutoMigrate(&models.MasterToko{}, &models.User{}, &models.PersonalAccessToken{})
+    err = DB.AutoMigrate(
+            &models.MasterToko{}, 
+            &models.User{}, 
+            &models.PersonalAccessToken{},
+            &models.MasterPelanggan{},
+            &models.MasterAlamatPelanggan{},
+            &models.MasterKategoriProduk{},
+        )
+    
     if err != nil {
         panic(err)
     }

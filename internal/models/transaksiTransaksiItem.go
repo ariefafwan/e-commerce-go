@@ -18,9 +18,9 @@ type TransaksiItem struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 
-	DataTransaksi   Transaksi 			`gorm:"foreignKey:IDTransaksi;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	DataProduk      MasterProduk       	`gorm:"foreignKey:IDProduk;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	DataVariant     MasterProdukVariant `gorm:"foreignKey:IDVariantProduk;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	DataTransaksi   Transaksi 			`gorm:"foreignKey:IDTransaksi;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	DataProduk      MasterProduk       	`gorm:"foreignKey:IDProduk;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	DataVariant     MasterProdukVariant `gorm:"foreignKey:IDVariantProduk;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
 func (TransaksiItem) TableName() string {

@@ -1,14 +1,16 @@
 package repositories
 
 import (
+	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
 
+	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type MasterKategoriProdukRepository interface {
-	GetAll() ([]models.MasterKategoriProduk, error)
-	GetByID(id string) (*models.MasterKategoriProduk, error)
+	GetAll() ([]dto.MasterKategoriProdukResponse, error)
+	GetByID(id string) (*dto.MasterKategoriProdukResponse, error)
 	Create(kategori *models.MasterKategoriProduk) error
 	Update(kategori *models.MasterKategoriProduk) error
 	Delete(id string) error
@@ -22,19 +24,30 @@ func NewMasterKategoriProdukRepository(db *gorm.DB) MasterKategoriProdukReposito
 	return &masterKategoriProdukRepo{db}
 }
 
-func (r *masterKategoriProdukRepo) GetAll() ([]models.MasterKategoriProduk, error) {
+func (r *masterKategoriProdukRepo) GetAll() ([]dto.MasterKategoriProdukResponse, error) {
 	var kategori []models.MasterKategoriProduk
 	err := r.db.Find(&kategori).Error
-	return kategori, err
+	if err != nil {
+		return nil, err
+	}
+	var kategoriResponse []dto.MasterKategoriProdukResponse
+	if err := copier.Copy(&kategoriResponse, &kategori); err != nil {
+		return nil, err
+	}
+	return kategoriResponse, err
 }
 
-func (r *masterKategoriProdukRepo) GetByID(id string) (*models.MasterKategoriProduk, error) {
+func (r *masterKategoriProdukRepo) GetByID(id string) (*dto.MasterKategoriProdukResponse, error) {
 	var kategori models.MasterKategoriProduk
 	err := r.db.First(&kategori, "id = ?", id).Preload("DataParent").Error
 	if err != nil {
 		return nil, err
 	}
-	return &kategori, nil
+	var kategoriResponse dto.MasterKategoriProdukResponse
+	if err := copier.Copy(&kategoriResponse, &kategori); err != nil {
+		return nil, err
+	}
+	return &kategoriResponse, nil
 }
 
 func (r *masterKategoriProdukRepo) Create(kategori *models.MasterKategoriProduk) error {

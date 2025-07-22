@@ -1,6 +1,8 @@
 package request
 
 import (
+	"e-commerce-go/pkg"
+	"fmt"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -8,7 +10,55 @@ import (
 
 var validate = validator.New()
 
-func ValidateStruct(data interface{}) map[string]string {
+func init() {
+	// Register custom validator: fk_exists
+	validate.RegisterValidation("fk_exists", func(fl validator.FieldLevel) bool {
+		param := fl.Param() // "users|id"
+		parts := strings.Split(param, ":")
+		if len(parts) != 2 {
+			return false
+		}
+		table, column := parts[0], parts[1]
+		value := fl.Field().Interface()
+		if value == nil || value == "" {
+			return true
+		}
+
+		query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", table, column)
+		var count int64
+		db := pkg.DB
+		err := db.Raw(query, value).Scan(&count).Error
+		if err != nil || count == 0 {
+			return false
+		}
+		return true
+	})
+
+	// Register custom validator: unique
+	validate.RegisterValidation("unique", func(fl validator.FieldLevel) bool {
+		param := fl.Param() // "users|email"
+		parts := strings.Split(param, ":")
+		if len(parts) != 2 {
+			return false
+		}
+		table, column := parts[0], parts[1]
+		value := fl.Field().Interface()
+		if value == nil || value == "" {
+			return true
+		}
+
+		query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ?", table, column)
+		var count int64
+		db := pkg.DB
+		err := db.Raw(query, value).Scan(&count).Error
+		if err != nil || count > 0 {
+			return false
+		}
+		return true
+	})
+}
+
+func ValidateStruct(data interface{}) map[string]string {	
 	err := validate.Struct(data)
 	if err == nil {
 		return nil
@@ -24,6 +74,10 @@ func ValidateStruct(data interface{}) map[string]string {
 			errors[field] = field + " minimal sepanjang " + e.Param()
 		case "max":
 			errors[field] = field + " maksimal sepanjang " + e.Param()
+		case "fk_exists":
+			errors[field] = field + " tidak ditemukan di database"
+		case "unique":
+			errors[field] = field + " sudah digunakan"
 		default:
 			errors[field] = "Field " + strings.ToLower(field) + " tidak valid"
 		}
