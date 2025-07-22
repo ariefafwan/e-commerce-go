@@ -43,7 +43,7 @@ func (ct TipeToken) Value() (driver.Value, error) {
 type PersonalAccessToken struct {
 	ID        uuid.UUID `gorm:"type:char(36);primaryKey"`
 	IDUser    uuid.UUID	`gorm:"type:char(36);not null;"`
-	Nama      string	`gorm:"type:varchar(50);not null;uniqueIndex"`
+	Nama      string	`gorm:"type:varchar(50);not null;"`
 	Token     string	`gorm:"uniqueIndex"`
 	Type      TipeToken	`gorm:"type:varchar(50);not null;"`
 	ExpiredAt time.Time

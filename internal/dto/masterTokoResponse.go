@@ -7,8 +7,6 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-
-	"e-commerce-go/internal/models"
 )
 
 type MasterTokoResponse struct {
@@ -23,7 +21,7 @@ type MasterTokoResponse struct {
 }
 
 func (m *MasterTokoResponse) FileUrl() string {
-	return fmt.Sprintf("https://example.com/uploads/%s", m.Gambar)
+	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Toko/%s", m.Gambar)
 }
 
 func (m MasterTokoResponse) MarshalJSON() ([]byte, error) {
@@ -35,25 +33,4 @@ func (m MasterTokoResponse) MarshalJSON() ([]byte, error) {
 		Alias:  (*Alias)(&m),
 		Gambar: m.FileUrl(),
 	})
-}
-
-func FromMasterToko(model models.MasterToko) MasterTokoResponse {
-	return MasterTokoResponse{
-		ID:          model.ID,
-		Nama:        model.Nama,
-		Alamat:      model.Alamat,
-		Gambar:      model.Gambar,
-		NomorToko:   model.NomorToko,
-		AturanPajak: model.AturanPajak,
-		CreatedAt:   model.CreatedAt,
-		UpdatedAt:   model.UpdatedAt,
-	}
-}
-
-func FromMasterTokoList(models []models.MasterToko) []MasterTokoResponse {
-	var list []MasterTokoResponse
-	for _, m := range models {
-		list = append(list, FromMasterToko(m))
-	}
-	return list
 }

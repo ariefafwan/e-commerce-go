@@ -15,7 +15,7 @@ func SeedMasterToko(db *gorm.DB) {
 		Gambar:     "https://source.unsplash.com/random/400x400/?toko",
 		NomorToko:  "123456789",
 		AturanPajak: 10.0,
-	})
+	}).Error
 
 	if err != nil {
 		fmt.Println("Error seeding Master Toko:", err)

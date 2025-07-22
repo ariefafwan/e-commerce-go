@@ -31,7 +31,7 @@ func ConnectDB() {
     }
 
     DB = db
-    err = DB.AutoMigrate(&models.MasterToko{})
+    err = DB.AutoMigrate(&models.MasterToko{}, &models.User{}, &models.PersonalAccessToken{})
     if err != nil {
         panic(err)
     }

@@ -20,10 +20,10 @@ func ValidateStruct(data interface{}) map[string]string {
 		switch e.Tag() {
 		case "required":
 			errors[field] = field + " wajib diisi"
-		case "gte":
-			errors[field] = field + " minimal " + e.Param()
-		case "lte":
-			errors[field] = field + " maksimal " + e.Param()
+		case "min":
+			errors[field] = field + " minimal sepanjang " + e.Param()
+		case "max":
+			errors[field] = field + " maksimal sepanjang " + e.Param()
 		default:
 			errors[field] = "Field " + strings.ToLower(field) + " tidak valid"
 		}
