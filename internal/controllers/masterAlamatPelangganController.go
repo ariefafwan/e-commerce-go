@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type MasterAlamatPelangganController struct {
@@ -61,7 +62,7 @@ func (ma *MasterAlamatPelangganController) Create(c *gin.Context) {
 	}
 
 	data := models.MasterAlamatPelanggan{
-		IDPelanggan:   req.IDPelanggan,
+		IDPelanggan:   uuid.MustParse(req.IDPelanggan),
 		AlamatLengkap: req.AlamatLengkap,
 		KodePos:       req.KodePos,
 		Kota:          req.Kota,
@@ -99,13 +100,14 @@ func (ma *MasterAlamatPelangganController) Update(c *gin.Context) {
 
 	data := models.MasterAlamatPelanggan{
 		ID:            existing.ID,
-		IDPelanggan:   req.IDPelanggan,
+		IDPelanggan:   uuid.MustParse(req.IDPelanggan),
 		AlamatLengkap: req.AlamatLengkap,
 		KodePos:       req.KodePos,
 		Kota:          req.Kota,
 		Negara:        req.Negara,
 		NomorPenerima: req.NomorPenerima,
 		NamaPenerima:  req.NamaPenerima,
+		IsDefault:     existing.IsDefault,
 	}
 
 	if err := ma.Repo.Update(&data); err != nil {

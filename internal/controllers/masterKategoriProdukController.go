@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type MasterKategoriProdukController struct {
@@ -37,7 +38,7 @@ func (mkp *MasterKategoriProdukController) GetByID(c *gin.Context) {
 }
 
 func (mkp *MasterKategoriProdukController) Create(c *gin.Context) {
-	var req request.KategoriProdukRequest
+	var req request.CreateKategoriProdukRequest
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
 		return
@@ -50,7 +51,12 @@ func (mkp *MasterKategoriProdukController) Create(c *gin.Context) {
 
 	data := models.MasterKategoriProduk{
 		Nama: req.Nama,
-		IDParent: req.IDParent,
+	}
+
+	if req.IDParent != nil {
+		var idParent uuid.UUID
+		idParent, _ = uuid.Parse(*req.IDParent)
+		data.IDParent = &idParent
 	}
 
 	if err := mkp.Repo.Create(&data); err != nil {
@@ -69,7 +75,8 @@ func (mkp *MasterKategoriProdukController) Update(c *gin.Context) {
 		return
 	}
 
-	var req request.KategoriProdukRequest
+	var req request.UpdateKategoriProdukRequest
+	req.ID = id
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
 		return
@@ -80,7 +87,7 @@ func (mkp *MasterKategoriProdukController) Update(c *gin.Context) {
 		return
 	}
 
-	if req.IDParent != nil && id == req.IDParent.String() {
+	if req.IDParent != nil && id == *req.IDParent {
 		helpers.Error(c, http.StatusUnprocessableEntity, "ID Parent Tidak Boleh Sama Dengan ID Kategori", "Validasi gagal")
 		return
 	}
@@ -88,8 +95,13 @@ func (mkp *MasterKategoriProdukController) Update(c *gin.Context) {
 	data := models.MasterKategoriProduk{
 		ID:     existing.ID,
 		Nama:   req.Nama,
-		IDParent: req.IDParent,
 		Urutan: existing.Urutan,
+	}
+
+	if req.IDParent != nil {
+		var idParent uuid.UUID
+		idParent, _ = uuid.Parse(*req.IDParent)
+		data.IDParent = &idParent
 	}
 
 	if req.Urutan != nil {

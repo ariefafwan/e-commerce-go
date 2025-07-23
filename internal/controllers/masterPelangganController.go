@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type MasterPelangganController struct {
@@ -40,7 +41,7 @@ func (mp *MasterPelangganController) GetByID(c *gin.Context) {
 }
 
 func (mp * MasterPelangganController) Create(c *gin.Context) {
-	var req request.PelangganRequest
+	var req request.CreatePelangganRequest
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
 		return
@@ -52,7 +53,7 @@ func (mp * MasterPelangganController) Create(c *gin.Context) {
 	}
 
 	data := models.MasterPelanggan{
-		IDUser: req.IDUser,
+		IDUser: uuid.MustParse(req.IDUser),
 		NamaLengkap: req.NamaLengkap,
 		NamaPanggilan: req.NamaPanggilan,
 		Phone: req.Phone,
@@ -74,7 +75,8 @@ func (mp *MasterPelangganController) Update(c *gin.Context) {
 		return
 	}
 
-	var req request.PelangganRequest
+	var req request.UpdatePelangganRequest
+	req.ID = id
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
 		return
@@ -87,7 +89,7 @@ func (mp *MasterPelangganController) Update(c *gin.Context) {
 
 	data := models.MasterPelanggan{
 		ID: existing.ID,
-		IDUser: req.IDUser,
+		IDUser: uuid.MustParse(req.IDUser),
 		NamaLengkap: req.NamaLengkap,
 		NamaPanggilan: req.NamaPanggilan,
 		Phone: req.Phone,

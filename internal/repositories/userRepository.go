@@ -35,7 +35,7 @@ func (r *userRepo) GetAll() ([]models.User, error) {
 
 func (r *userRepo) GetByID(id string) (*models.User, error) {
     var user models.User
-    err := r.db.First(&user, "id = ?", id).Preload("DataPelanggan").Error
+    err := r.db.Preload("DataPelanggan").First(&user, "id = ?", id).Error
     if err != nil {
         return nil, err
     }
@@ -44,7 +44,7 @@ func (r *userRepo) GetByID(id string) (*models.User, error) {
 
 func (r *userRepo) GetByEmail(email string) (*models.User, error) {
 	var user models.User
-	err := r.db.Where("email = ?", email).First(&user).Preload("DataPelanggan").Error
+	err := r.db.Where("email = ?", email).Preload("DataPelanggan").First(&user).Error
 	if err != nil {
 		return nil, err
 	}

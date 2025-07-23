@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,7 +26,30 @@ func (MasterProdukVariant) TableName() string {
 	return "master_produk_variant"
 }
 
+const skuCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+func generateRandomSKU(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	sku := make([]byte, length)
+	for i := range sku {
+		sku[i] = skuCharset[rand.Intn(len(skuCharset))]
+	}
+	return string(sku)
+}
+
 func (m *MasterProdukVariant) BeforeCreate(tx *gorm.DB) (err error) {
 	m.ID = uuid.New()
+	for {
+		sku := fmt.Sprintf("VARIANT-%s", generateRandomSKU(10))
+		var count int64
+		err := tx.Model(&MasterProdukVariant{}).Where("sku = ?", sku).Count(&count).Error
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			m.SKU = sku
+			break
+		}
+	}
 	return nil
 }

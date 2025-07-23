@@ -26,7 +26,7 @@ func NewMasterPelangganRepository(db *gorm.DB) MasterPelangganRepository {
 
 func (r *masterPelangganRepo) GetAll() ([]dto.MasterPelangganResponse, error) {
 	var pelanggan []models.MasterPelanggan
-	err := r.db.Find(&pelanggan).Preload("DataUser").Error
+	err := r.db.Preload("DataUser").Preload("DataAlamat").Find(&pelanggan).Error
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (r *masterPelangganRepo) GetAll() ([]dto.MasterPelangganResponse, error) {
 
 func (r *masterPelangganRepo) GetByID(id string) (*dto.MasterPelangganResponse, error) {
 	var pelanggan models.MasterPelanggan
-	err := r.db.First(&pelanggan, "id = ?", id).Preload("DataUser").Preload("DataAlamat").Error
+	err := r.db.Preload("DataUser").Preload("DataAlamat").First(&pelanggan, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

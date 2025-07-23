@@ -56,6 +56,37 @@ func init() {
 		}
 		return true
 	})
+
+	validate.RegisterValidation("unique_except", func(fld validator.FieldLevel) bool {
+		params := fld.Param()
+		parts := strings.Split(params, ":")
+		if len(parts) != 3 {
+			return false
+		}
+		table, column, id := parts[0], parts[1], parts[2]
+		value := fld.Field().Interface()
+
+		parent := fld.Parent()
+		excludeID := parent.FieldByNameFunc(func(name string) bool {
+			return strings.EqualFold(name, id)
+		})
+		if !excludeID.IsValid() {
+			return false
+		}
+		
+		if value == nil || value == "" {
+			return false
+		}
+
+		// query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ? AND id != ?", table, column)
+		var count int64
+		db := pkg.DB
+		err := db.Table(table).Where(column + " = ? AND id != ?", value, excludeID.Interface()).Scan(&count).Error
+		if err != nil || count > 0 {
+			return false
+		}
+		return true
+	})
 }
 
 func ValidateStruct(data interface{}) map[string]string {	
@@ -77,6 +108,8 @@ func ValidateStruct(data interface{}) map[string]string {
 		case "fk_exists":
 			errors[field] = field + " tidak ditemukan di database"
 		case "unique":
+			errors[field] = field + " sudah digunakan"
+		case "unique_except":
 			errors[field] = field + " sudah digunakan"
 		default:
 			errors[field] = "Field " + strings.ToLower(field) + " tidak valid"

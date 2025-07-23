@@ -29,7 +29,7 @@ func NewMasterAlamatPelangganRepository(db *gorm.DB) MasterAlamatPelangganReposi
 
 func (r *masterAlamatPelangganRepo) GetAll() ([]dto.MasterAlamatPelangganResponse, error) {
 	var alamat []models.MasterAlamatPelanggan
-	err := r.db.Find(&alamat).Preload("DataPelanggan").Error
+	err := r.db.Preload("DataPelanggan").Find(&alamat).Error
 	if err != nil {
 		return []dto.MasterAlamatPelangganResponse{}, err
 	}
@@ -55,7 +55,7 @@ func (r *masterAlamatPelangganRepo) GetAllByPelanggan(id string) ([]dto.MasterAl
 	return alamatResponse, err
 }
 
-func (r *masterAlamatPelangganRepo) GetByID (id string) (*dto.MasterAlamatPelangganResponse, error) {
+func (r *masterAlamatPelangganRepo) GetByID(id string) (*dto.MasterAlamatPelangganResponse, error) {
 	var alamat models.MasterAlamatPelanggan
 	err := r.db.First(&alamat, "id = ?", id).Error
 	if err != nil {
@@ -112,17 +112,41 @@ func (r *masterAlamatPelangganRepo) Delete(id string) error {
 
 	if count < 2 {
 		return ErrorAlamatPelanggan
+	} else if data.IsDefault {
+		var dataTerakhir models.MasterAlamatPelanggan
+		if err := r.db.
+			Last(&dataTerakhir, "id != ? AND id_pelanggan = ?", data.ID, data.IDPelanggan).Error; err != nil {
+			return errors.New("failed to update default alamat 1")
+		}
+
+		if err := r.db.
+			Model(&models.MasterAlamatPelanggan{}).
+			Where("id = ?", dataTerakhir.ID).
+			Update("is_default", true).Error; err != nil {
+			return errors.New("failed to update default alamat")
+		}
 	}
 
 	return r.db.Delete(&data, "id = ?", id).Error
 }
 
 func (r *masterAlamatPelangganRepo) SetAlamatUtama(id string) error {
-	if err := r.db.
-		Model(&models.MasterAlamatPelanggan{}).
-		Where("id != ? AND is_default = ?", id, true).
-		Update("is_default", false).Error; err != nil {
+	data, err := r.GetByID(id)
+	if err != nil {
 		return err
+	}
+
+	var count int64
+	r.db.First(&models.MasterAlamatPelanggan{}, "id != ? AND id_pelanggan = ? AND is_default = ?", id, data.IDPelanggan, true).
+		Count(&count)
+		
+	if count > 0 {
+		if err := r.db.
+			Model(&models.MasterAlamatPelanggan{}).
+			Where("id != ? AND id_pelanggan = ? AND is_default = ?", id, data.IDPelanggan, true).
+			Update("is_default", false).Error; err != nil {
+			return errors.New("failed to update default alamat")
+		}
 	}
 
 	return r.db.

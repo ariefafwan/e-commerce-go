@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gosimple/slug"
 	"gorm.io/gorm"
 
 	"database/sql/driver"
@@ -45,7 +46,7 @@ type MasterProduk struct {
 	Nama       string		`gorm:"type:varchar(50);not null;"`
 	Thumbnail  string		`gorm:"type:varchar(255);not null;"`
 	Slug       string 		`gorm:"uniqueIndex"`
-	Status     StatusProduk `gorm:"type:varchar(50);not null;default:Aktif"`
+	Status     StatusProduk `gorm:"type:varchar(50);not null;default:Non Aktif"`
 	MinHarga   float64		`gorm:"tyoe:float;not null;"`
     MaxHarga   float64		`gorm:"type:float;not null;"`
 	Deskripsi  string		`gorm:"type:text;not null;"`
@@ -63,5 +64,22 @@ func (MasterProduk) TableName() string {
 
 func (m *MasterProduk) BeforeCreate(tx *gorm.DB) (err error) {
 	m.ID = uuid.New()
-	return
+	baseSlug := slug.Make(m.Nama)
+	slug := baseSlug
+	counter := 1
+
+	for {
+		var count int64
+		err := tx.Model(&MasterProduk{}).Where("slug = ?", slug).Count(&count).Error
+		if err != nil {
+			return err
+		}
+		if count == 0 {
+			break
+		}
+		slug = fmt.Sprintf("%s-%d", baseSlug, counter)
+		counter++
+	}
+	m.Slug = slug
+	return nil
 }

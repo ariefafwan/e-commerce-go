@@ -26,7 +26,7 @@ func NewMasterKategoriProdukRepository(db *gorm.DB) MasterKategoriProdukReposito
 
 func (r *masterKategoriProdukRepo) GetAll() ([]dto.MasterKategoriProdukResponse, error) {
 	var kategori []models.MasterKategoriProduk
-	err := r.db.Find(&kategori).Error
+	err := r.db.Preload("DataParent").Find(&kategori).Error
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (r *masterKategoriProdukRepo) GetAll() ([]dto.MasterKategoriProdukResponse,
 
 func (r *masterKategoriProdukRepo) GetByID(id string) (*dto.MasterKategoriProdukResponse, error) {
 	var kategori models.MasterKategoriProduk
-	err := r.db.First(&kategori, "id = ?", id).Preload("DataParent").Error
+	err := r.db.Preload("DataParent").First(&kategori, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

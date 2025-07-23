@@ -44,7 +44,7 @@ func (a *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, accessExp := helpers.GenerateJWT(user.ID.String(), "access-token", 15*time.Minute)
+	accessToken, accessExp := helpers.GenerateJWT(user.ID.String(), "access-token", 60*time.Minute)
 	refreshToken, refreshExp := helpers.GenerateJWT(user.ID.String(), "refresh-token", 1*24*time.Hour)
 
 	ipAddr := ctx.ClientIP()
@@ -131,7 +131,7 @@ func (a *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, accessExp := helpers.GenerateJWT(user.ID.String(), "access-token", 15*time.Minute)
+	accessToken, accessExp := helpers.GenerateJWT(user.ID.String(), "access-token", 60*time.Minute)
 	refreshToken, refreshExp := helpers.GenerateJWT(user.ID.String(), "refresh-token", 1*24*time.Hour)
 
 	ipAddr := ctx.ClientIP()
@@ -209,7 +209,7 @@ func (a *AuthController) Refresh(ctx *gin.Context) {
 		return
 	}
 
-	newAccessToken, newAccessExp := helpers.GenerateJWT(claims.UserID, "access-token", 15*time.Minute)
+	newAccessToken, newAccessExp := helpers.GenerateJWT(claims.UserID, "access-token", 60*time.Minute)
 	newRefreshToken, newRefreshExp := helpers.GenerateJWT(claims.UserID, "refresh-token", 1*24*time.Hour)
 	
 	ipAddr := ctx.ClientIP()

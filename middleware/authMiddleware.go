@@ -4,6 +4,7 @@ import (
 	"e-commerce-go/internal/helpers"
 	"e-commerce-go/internal/models"
 	"e-commerce-go/pkg"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -43,14 +44,16 @@ func AuthMiddleware(roles ...any) gin.HandlerFunc {
 			return 
 		}
 
+		userRole, _ := pat.Role.Value()
 		for _, r := range roles {
-			if pat.Role == r {
+			if r == userRole {
 				ctx.Set("user", pat)
 				ctx.Next()
 				return
 			}
 		}
+		messege := fmt.Sprintf("Access denied, you don't have access to this resource, your role is %s", userRole)
 
-		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Access denied, you don't have access to this resource"})
+		ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": messege})
 	}
 }

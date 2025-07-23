@@ -1,16 +1,24 @@
 package repositories
 
 import (
+	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
+	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/gosimple/slug"
+	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type MasterProdukRepository interface {
-	GetAll() ([]models.MasterProduk, error)
-	GetByID(id string) (*models.MasterProduk, error)
-	Create(produk *models.MasterProduk) error
-	Update(produk *models.MasterProduk) error
+	GetAll() ([]dto.MasterProdukResponse, error)
+	GetAllByKategori(slug string) ([]dto.MasterProdukResponse, error)
+	GetByID(id string) (dto.MasterProdukResponse, error)
+	GetBySlug(slug string) (dto.MasterProdukResponse, error)
+	UpdateStatus(id string, status string) error
+	Create(produk *models.MasterProduk, kategoris []string) error
+	Update(produk *models.MasterProduk, kategoris []string) error
 	Delete(id string) error
 }
 
@@ -22,27 +30,131 @@ func NewMasterProdukRepository(db *gorm.DB) MasterProdukRepository {
 	return &masterProdukRepo{db}
 }
 
-func (m *masterProdukRepo) GetAll() ([]models.MasterProduk, error) {
+func (m *masterProdukRepo) GetAll() ([]dto.MasterProdukResponse, error) {
 	var produk []models.MasterProduk
-	err := m.db.Find(&produk).Error
-	return produk, err
+	err := m.db.Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant").Find(&produk).Error
+	
+	var produkResponse []dto.MasterProdukResponse
+	if err := copier.Copy(&produkResponse, &produk); err != nil {
+		return nil, err
+	}
+	return produkResponse, err
 }
 
-func (m *masterProdukRepo) GetByID(id string) (*models.MasterProduk, error) {
-	var produk models.MasterProduk
-	err := m.db.First(&produk, "id = ?", id).Error
+func (m *masterProdukRepo) GetAllByKategori(slug string) ([]dto.MasterProdukResponse, error) {
+	var produk []models.MasterProduk
+	var kategori models.MasterKategoriProduk
+	err := m.db.Model(&models.MasterKategoriProduk{}).Where("slug = ?", slug).First(&kategori).Error
 	if err != nil {
 		return nil, err
 	}
-	return &produk, nil
+
+	var kategoriIDs []uuid.UUID
+	kategoriIDs = append(kategoriIDs, kategori.ID)
+
+	var childIDs []uuid.UUID
+	if err := m.db.Model(&models.MasterKategoriProduk{}).
+		Where("id_parent = ?", kategori.ID).
+		Pluck("id", &childIDs).Error; err != nil {
+		return nil, err
+	}
+
+	kategoriIDs = append(kategoriIDs, childIDs...)
+
+	err = m.db.Preload("DataKategori").
+		Preload("DataGaleri").
+		Preload("DataVariant").
+		Where("id IN (?)",
+			m.db.Table("master_produk_kategori_produk").
+				Select("id_produk").
+				Where("id_kategori IN ?", kategoriIDs),
+		).Find(&produk).Error
+		
+	if err != nil {
+		return nil, err
+	}
+	var produkResponse []dto.MasterProdukResponse
+	err = copier.Copy(&produkResponse, &produk)
+	if err != nil {
+		return nil, err
+	}
+	return produkResponse, err
 }
 
-func (m *masterProdukRepo) Create(produk *models.MasterProduk) error {
+func (m *masterProdukRepo) GetByID(id string) (dto.MasterProdukResponse, error) {
+	var produk models.MasterProduk
+	err := m.db.Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant").First(&produk, "id = ?", id).Error
+	if err != nil {
+		return dto.MasterProdukResponse{}, err
+	}
+
+	var produkResponse dto.MasterProdukResponse
+	if err := copier.Copy(&produkResponse, &produk); err != nil {
+		return dto.MasterProdukResponse{}, err
+	}
+	return produkResponse, nil
+}
+
+func (m *masterProdukRepo) GetBySlug(slug string) (dto.MasterProdukResponse, error) {
+	var produk models.MasterProduk
+	err := m.db.Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant").First(&produk, "slug = ?", slug).Error
+	if err != nil {
+		return dto.MasterProdukResponse{}, err
+	}
+
+	var produkResponse dto.MasterProdukResponse
+	if err := copier.Copy(&produkResponse, &produk); err != nil {
+		return dto.MasterProdukResponse{}, err
+	}
+	return produkResponse, nil
+}
+
+func (m *masterProdukRepo) Create(produk *models.MasterProduk, kategoris []string) error {
+	var kategori []models.MasterKategoriProduk
+	err := m.db.Where("id IN ?", kategoris).Find(&kategori).Error
+	if err != nil {
+		return err
+	}
+	produk.DataKategori = kategori
 	return m.db.Create(produk).Error
 }
 
-func (m *masterProdukRepo) Update(produk *models.MasterProduk) error {
-	return m.db.Save(produk).Error
+func (m *masterProdukRepo) Update(produk *models.MasterProduk, kategoris []string) error {
+	var data models.MasterProduk
+	err := m.db.First(&data, "id = ?", produk.ID).Error
+	if err != nil {
+		return err
+	}
+	if data.Nama != produk.Nama {
+		baseSlug := slug.Make(produk.Nama)
+		slug := baseSlug
+		counter := 1
+		for {
+			var count int64
+			err := m.db.Model(&models.MasterProduk{}).Where("slug = ?", data.Slug).Count(&count).Error
+			if err != nil {
+				return err
+			}
+			if count == 0 {
+				break
+			}
+			slug = fmt.Sprintf("%s-%d", baseSlug, counter)
+			counter++
+		}
+		produk.Slug = slug
+	}
+	var kategori []models.MasterKategoriProduk
+	err = m.db.Where("id IN ?", kategoris).Find(&kategori).Error
+	if err != nil {
+		return err
+	}
+	produk.DataKategori = kategori
+	return m.db.Model(&models.MasterProduk{}).Where("id = ?", produk.ID).Updates(&produk).Error
+}
+
+
+func (m *masterProdukRepo) UpdateStatus(id string, status string) error {
+	return m.db.Model(&models.MasterProduk{}).Where("id = ?", id).Update("status", status).Error
 }
 
 func (m *masterProdukRepo) Delete(id string) error {

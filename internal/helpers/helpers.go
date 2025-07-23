@@ -1,9 +1,9 @@
 package helpers
 
 import (
+	"e-commerce-go/external/cloudinary"
 	"log"
-	"strings"
-	"unicode"
+	"mime/multipart"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,19 +16,10 @@ func Hash(password string) string {
 	return string(hashed)
 }
 
-func GenerateSlug(input string) string {
-	input = strings.ToLower(input)
+func UploadImage(file *multipart.FileHeader, folder string) (string, error) {
+	return cloudinary.UploadImage(file, folder)
+}
 
-	var slug strings.Builder
-	for _, r := range input {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) {
-			slug.WriteRune(r)
-		} else if r == ' ' || r == '-' || r == '_' {
-			slug.WriteRune('-')
-		}
-	}
-
-	return strings.Join(strings.FieldsFunc(slug.String(), func(r rune) bool {
-		return r == '-'
-	}), "-")
+func DeleteImage(publicID string) error {
+	return cloudinary.DeleteImage(publicID)
 }
