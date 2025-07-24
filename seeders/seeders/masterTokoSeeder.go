@@ -12,9 +12,12 @@ func SeedMasterToko(db *gorm.DB) {
 	err := db.Create(&models.MasterToko{
 		Nama:       "Toko Sanbercode",
 		Alamat:     "Jl. Sanbercode No. 1",
-		Gambar:     "https://source.unsplash.com/random/400x400/?toko",
-		NomorToko:  "123456789",
-		AturanPajak: 10.0,
+		Gambar:     "1753166749_data3.jpg",
+		IDProvinsi: "25",
+		IDKota:     "433",
+		IDKecamatan: "4240",
+		NoTelp:  	"123456789",
+		AturanPajak: 11.0,
 	}).Error
 
 	if err != nil {

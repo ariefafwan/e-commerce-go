@@ -8,8 +8,11 @@ import (
 type UpdateTokoRequest struct {
 	Nama   			string  				`form:"nama" validate:"required,min=2,max=100"`
 	Alamat 			string  				`form:"alamat" validate:"required,min=2,max=500"`
+	IDProvinsi 		string  				`form:"id_provinsi" validate:"required,min=2,max=500,fk_exists=master_provinsi:id"`
+	IDKota 			string  				`form:"id_kota" validate:"required,min=2,max=500,fk_exists=master_kota:id"`
+	IDKecamatan 	string  				`form:"id_kecamatan" validate:"required,min=2,max=500,fk_exists=master_kecamatan:id"`
 	Gambar     		*multipart.FileHeader 	`form:"gambar"`
-	NomorToko  		string					`form:"nomor_toko" validate:"required,min=10,max=15"`
+	NoTelp  		string					`form:"no_telp" validate:"required,min=10,max=15"`
 	AturanPajak 	float64					`form:"aturan_pajak" validate:"required,min=10,max=15"`
 }
 
@@ -30,10 +33,12 @@ type UpdatePelangganRequest struct {
 
 type AlamatPelangganRequest struct {
 	IDPelanggan  	string  				`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
+	Label 			string  				`form:"label" validate:"required,min=2,max=500"`
 	AlamatLengkap 	string  				`form:"alamat_lengkap" validate:"required,min=2,max=500"`
 	KodePos 		string  				`form:"kode_pos" validate:"required,min=2,max=500"`
-	Kota 			string  				`form:"kota" validate:"required,min=2,max=500"`
-	Negara 			string  				`form:"negara" validate:"required,min=2,max=500"`
+	IDProvinsi 		string  				`form:"id_provinsi" validate:"required,min=2,max=500,fk_exists=master_provinsi:id"`
+	IDKota 			string  				`form:"id_kota" validate:"required,min=2,max=500,fk_exists=master_kota:id"`
+	IDKecamatan 	string  				`form:"id_kecamatan" validate:"required,min=2,max=500,fk_exists=master_kecamatan:id"`
 	NomorPenerima 	string  				`form:"nomor_penerima" validate:"required,min=2,max=500"`
 	NamaPenerima 	string  				`form:"nama_penerima" validate:"required,min=2,max=500"`
 }
@@ -57,8 +62,9 @@ type ProdukRequest struct {
 	MinHarga  	float64					`form:"min_harga" validate:"required"`
 	MaxHarga  	float64					`form:"max_harga" validate:"required"`
 	Deskripsi 	string					`form:"deskripsi" validate:"required"`
-	Status    	*models.StatusProduk	`form:"status" validate:"required"`
-	IDKategoriProduk []string			`form:"id_kategori_produk" validate:"required,fk_exists=master_kategori_produk:id"`
+	Status    	*models.StatusProduk	`form:"status"`
+	Berat     	float64					`form:"berat" validate:"required"`
+	IDKategoriProduk []string			`form:"id_kategori_produk" validate:"required"`
 }
 
 type ProdukVariantRequest struct {

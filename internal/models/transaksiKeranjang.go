@@ -8,8 +8,8 @@ import (
 )
 
 type TransaksiKeranjang struct {
-	ID             uuid.UUID 	`gorm:"type:char(36);primaryKey"`
-	IDPelanggan    uuid.UUID	`gorm:"type:char(36);not null;"`
+	ID             uuid.UUID 	`gorm:"type:uuid;primaryKey"`
+	IDPelanggan    uuid.UUID	`gorm:"type:uuid;not null;"`
 	BerlakuSampai  time.Time
 	CreatedAt      time.Time
 	UpdatedAt      time.Time

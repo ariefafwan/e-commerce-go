@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	pkg.LoadEnv()
 	pkg.ConnectDB()
 	pkg.InitCloudinary()
 

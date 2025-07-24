@@ -5,6 +5,7 @@ import (
 	"e-commerce-go/internal/models"
 	"e-commerce-go/internal/repositories"
 	"e-commerce-go/internal/request"
+	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,12 +21,24 @@ func NewMasterKategoriProdukController(repo repositories.MasterKategoriProdukRep
 }
 
 func (mkp *MasterKategoriProdukController) GetAll(c *gin.Context) {
-	data, err := mkp.Repo.GetAll()
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := mkp.Repo.GetAll(meta)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
-	helpers.Success(c, http.StatusOK, data, "Success")
+
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
 func (mkp *MasterKategoriProdukController) GetByID(c *gin.Context) {

@@ -8,8 +8,8 @@ import (
 )
 
 type MasterProdukGaleri struct {
-	ID        uuid.UUID `gorm:"type:char(36);primaryKey"`
-	IDProduk  uuid.UUID	`gorm:"type:char(36);not null;"`
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
+	IDProduk  uuid.UUID	`gorm:"type:uuid;not null;"`
 	Gambar    string	`gorm:"type:varchar(255);not null;"`
 	Urutan    uint8		`gorm:"not null;"`
 	CreatedAt time.Time	

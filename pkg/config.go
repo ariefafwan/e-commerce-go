@@ -2,20 +2,21 @@ package pkg
 
 import (
 	"log"
-	"os"
 
-	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
-func LoadEnv() {
-    if err := godotenv.Load(); err != nil {
-        log.Println("No .env file found")
-    }
-}
-
 func GetEnv(key string, fallback string) string {
-    if value, exists := os.LookupEnv(key); exists {
-        return value
+	viper.AddConfigPath(".")
+	viper.SetConfigFile(".env")
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("error when reading config: %s",err )
+	}
+
+	value := viper.GetString(key)
+    if value == "" {
+        return fallback
     }
-    return fallback
+    return value
 }

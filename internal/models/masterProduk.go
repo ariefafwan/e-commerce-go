@@ -42,18 +42,19 @@ func (ct StatusProduk) Value() (driver.Value, error) {
 }
 
 type MasterProduk struct {
-	ID         uuid.UUID 	`gorm:"type:char(36);primaryKey"`
-	Nama       string		`gorm:"type:varchar(50);not null;"`
+	ID         uuid.UUID 	`gorm:"type:uuid;primaryKey"`
+	Nama       string		`gorm:"type:varchar(255);not null;"`
 	Thumbnail  string		`gorm:"type:varchar(255);not null;"`
 	Slug       string 		`gorm:"uniqueIndex"`
 	Status     StatusProduk `gorm:"type:varchar(50);not null;default:Non Aktif"`
-	MinHarga   float64		`gorm:"tyoe:float;not null;"`
+	MinHarga   float64		`gorm:"type:float;not null;"`
     MaxHarga   float64		`gorm:"type:float;not null;"`
+	Berat      float64		`gorm:"type:float;not null"`
 	Deskripsi  string		`gorm:"type:text;not null;"`
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 
-	DataKategori   []MasterKategoriProduk 	`gorm:"many2many:master_produk_kategori_produk;joinForeignKey:IDProduk;JoinReferences:IDKategori"`
+	DataKategori   []MasterKategoriProduk 	`gorm:"many2many:master_produk_kategori_produk;foreignKey:ID;joinForeignKey:IDProduk;References:ID;joinReferences:IDKategori"`
 	DataGaleri     []MasterProdukGaleri		`gorm:"foreignKey:IDProduk"`
 	DataVariant    []MasterProdukVariant	`gorm:"foreignKey:IDProduk"`
 }
@@ -63,7 +64,9 @@ func (MasterProduk) TableName() string {
 }
 
 func (m *MasterProduk) BeforeCreate(tx *gorm.DB) (err error) {
-	m.ID = uuid.New()
+	if m.ID == uuid.Nil {
+		m.ID = uuid.New()
+	}
 	baseSlug := slug.Make(m.Nama)
 	slug := baseSlug
 	counter := 1

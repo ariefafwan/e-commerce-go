@@ -4,12 +4,13 @@ import (
 	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
 
+	"github.com/gosimple/slug"
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type MasterKategoriProdukRepository interface {
-	GetAll() ([]dto.MasterKategoriProdukResponse, error)
+	GetAll(q QueryParams) ([]dto.MasterKategoriProdukResponse, int64, error)
 	GetByID(id string) (*dto.MasterKategoriProdukResponse, error)
 	Create(kategori *models.MasterKategoriProduk) error
 	Update(kategori *models.MasterKategoriProduk) error
@@ -24,17 +25,41 @@ func NewMasterKategoriProdukRepository(db *gorm.DB) MasterKategoriProdukReposito
 	return &masterKategoriProdukRepo{db}
 }
 
-func (r *masterKategoriProdukRepo) GetAll() ([]dto.MasterKategoriProdukResponse, error) {
+func (r *masterKategoriProdukRepo) GetAll(q QueryParams) ([]dto.MasterKategoriProdukResponse, int64, error) {
 	var kategori []models.MasterKategoriProduk
-	err := r.db.Preload("DataParent").Find(&kategori).Error
-	if err != nil {
-		return nil, err
+	var total int64
+
+	offset := (q.Page - 1) * q.Limit
+
+	if q.Sort != "asc" && q.Sort != "desc" {
+		q.Sort = "asc"
 	}
+
+	query := r.db.Model(&models.MasterKategoriProduk{}).Preload("DataParent")
+
+	if q.Search != "" {
+		query = query.Where("nama LIKE ?", "%"+q.Search+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Order("created_at " + q.Sort).
+		Offset(offset).
+		Limit(q.Limit).
+		Find(&kategori).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
 	var kategoriResponse []dto.MasterKategoriProdukResponse
 	if err := copier.Copy(&kategoriResponse, &kategori); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return kategoriResponse, err
+
+	return kategoriResponse, total, nil
 }
 
 func (r *masterKategoriProdukRepo) GetByID(id string) (*dto.MasterKategoriProdukResponse, error) {
@@ -55,7 +80,8 @@ func (r *masterKategoriProdukRepo) Create(kategori *models.MasterKategoriProduk)
 }
 
 func (r *masterKategoriProdukRepo) Update(kategori *models.MasterKategoriProduk) error {
-	return r.db.Save(kategori).Error
+	kategori.Slug = slug.Make(kategori.Nama)
+	return r.db.Model(&models.MasterKategoriProduk{}).Where("id = ?", kategori.ID).Updates(kategori).Error
 }
 
 func (r *masterKategoriProdukRepo) Delete(id string) error {

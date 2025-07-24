@@ -42,16 +42,17 @@ func (ct StatusTransaksi) Value() (driver.Value, error) {
 }
 
 type Transaksi struct {
-	ID                 uuid.UUID `gorm:"type:char(36);primaryKey"`
-	NoInvoice          string	 `gorm:"type:varchar(20);not null;uniqueIndex"`
-	IDPelanggan        uuid.UUID `gorm:"type:char(36);not null;"`
-	IDAlamatPelanggan  uuid.UUID `gorm:"type:char(36);not null;"`
-	TotalHarga         float64	 `gorm:"type:float;not null;;"`
-	TotalOngkir        float64	 `gorm:"type:float;not null;;"`
-	JumlahItem		   int16	 `gorm:"type:int;not null;;"`
-	Pajak              float64	 `gorm:"type:float;not null;;"`
+	ID                 uuid.UUID `gorm:"type:uuid;primaryKey"`
+	NoInvoice          string	 `gorm:"type:varchar(255);not null;uniqueIndex"`
+	IDPelanggan        uuid.UUID `gorm:"type:uuid;not null;"`
+	IDAlamatPelanggan  uuid.UUID `gorm:"type:uuid;not null;"`
+	TotalHarga         float64	 `gorm:"type:float;not null;"`
+	TotalOngkir        float64	 `gorm:"type:float;not null;"`
+	JumlahItem		   int16	 `gorm:"type:int;not null;"`
+	BeratTotal 		   float64	 `gorm:"type:float;not null;"`
+	Pajak              float64	 `gorm:"type:float;not null;"`
 	Notes              string	 `gorm:"type:text;not null;"`
-	Status             StatusTransaksi 	`gorm:"type:varchar(20);not null;default:Pending"`
+	Status             StatusTransaksi 	`gorm:"type:varchar(255);not null;default:Pending"`
 	PaidAt     		   time.Time
 	CompleteAt         time.Time
 	CreatedAt          time.Time

@@ -10,8 +10,8 @@ import (
 )
 
 type MasterAlamatPelangganRepository interface {
-	GetAll() ([]dto.MasterAlamatPelangganResponse, error)
-	GetAllByPelanggan(id string) ([]dto.MasterAlamatPelangganResponse, error)
+	GetAll(q QueryParams) ([]dto.MasterAlamatPelangganResponse, int64,error)
+	GetAllByPelanggan(id string, q QueryParams) ([]dto.MasterAlamatPelangganResponse, int64, error)
 	GetByID(id string) (*dto.MasterAlamatPelangganResponse, error)
 	SetAlamatUtama(id string) error
 	Create(alamat *models.MasterAlamatPelanggan) error
@@ -27,32 +27,76 @@ func NewMasterAlamatPelangganRepository(db *gorm.DB) MasterAlamatPelangganReposi
 	return &masterAlamatPelangganRepo{db}
 }
 
-func (r *masterAlamatPelangganRepo) GetAll() ([]dto.MasterAlamatPelangganResponse, error) {
+func (r *masterAlamatPelangganRepo) GetAll(q QueryParams) ([]dto.MasterAlamatPelangganResponse, int64,error) {
 	var alamat []models.MasterAlamatPelanggan
-	err := r.db.Preload("DataPelanggan").Find(&alamat).Error
+	var total int64
+
+	offset := (q.Page - 1) * q.Limit
+
+	if q.Sort != "asc" && q.Sort != "desc" {
+		q.Sort = "asc"
+	}
+
+	query := r.db.Model(&models.MasterAlamatPelanggan{}).Preload("DataKecamatan.DataKota.DataProvinsi").Preload("DataPelanggan")
+
+	if q.Search != "" {
+		query = query.Where("label LIKE ?", "%"+q.Search+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Order("created_at " + q.Sort).
+		Offset(offset).
+		Limit(q.Limit).
+		Find(&alamat).Error
 	if err != nil {
-		return []dto.MasterAlamatPelangganResponse{}, err
+		return nil, 0, err
 	}
 	
 	var alamatResponse []dto.MasterAlamatPelangganResponse
 	if err := copier.Copy(&alamatResponse, &alamat); err != nil {
-		return []dto.MasterAlamatPelangganResponse{}, err
+		return nil, 0, err
 	}
-	return alamatResponse, err
+	return alamatResponse, total, err
 }
 
-func (r *masterAlamatPelangganRepo) GetAllByPelanggan(id string) ([]dto.MasterAlamatPelangganResponse, error) {
+func (r *masterAlamatPelangganRepo) GetAllByPelanggan(id string, q QueryParams) ([]dto.MasterAlamatPelangganResponse, int64, error) {
 	var alamat []models.MasterAlamatPelanggan
-	err := r.db.Find(&alamat, "id_pelanggan = ?", id).Error
+	var total int64
+
+	offset := (q.Page - 1) * q.Limit
+
+	if q.Sort != "asc" && q.Sort != "desc" {
+		q.Sort = "asc"
+	}
+
+	query := r.db.Model(&models.MasterAlamatPelanggan{})
+
+	if q.Search != "" {
+		query = query.Where("id_pelanggan = ? AND label LIKE ?", id, "%"+q.Search+"%").Preload("DataKecamatan.DataKota.DataProvinsi").Preload("DataPelanggan")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Order("created_at " + q.Sort).
+		Offset(offset).
+		Limit(q.Limit).
+		Find(&alamat).Error
 	if err != nil {
-		return []dto.MasterAlamatPelangganResponse{}, err
+		return nil, 0, err
 	}
 
 	var alamatResponse []dto.MasterAlamatPelangganResponse
 	if err := copier.Copy(&alamatResponse, &alamat); err != nil {
-		return []dto.MasterAlamatPelangganResponse{}, err
+		return nil, 0, err
 	}
-	return alamatResponse, err
+	return alamatResponse, total, err
 }
 
 func (r *masterAlamatPelangganRepo) GetByID(id string) (*dto.MasterAlamatPelangganResponse, error) {
@@ -90,7 +134,7 @@ func (r *masterAlamatPelangganRepo) Create(alamat *models.MasterAlamatPelanggan)
 }
 
 func (r *masterAlamatPelangganRepo) Update(alamat *models.MasterAlamatPelanggan) error {
-	return r.db.Save(alamat).Error
+	return r.db.Model(&models.MasterAlamatPelanggan{}).Where("id = ?", alamat.ID).Updates(alamat).Error
 }
 
 var ErrorAlamatPelanggan = errors.New("pelanggan harus memiliki setidaknya 1 alamat, silahkan update jika ingin merubah data ini")

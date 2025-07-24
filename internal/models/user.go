@@ -41,8 +41,8 @@ func (ct RoleUser) Value() (driver.Value, error) {
 
 type User struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Role      RoleUser 	`gorm:"type:varchar(20);not null;default:Pelanggan"`
-	Nama      string	`gorm:"type:varchar(50);not null;"`
+	Role      RoleUser 	`gorm:"type:varchar(255);not null;default:Pelanggan"`
+	Nama      string	`gorm:"type:varchar(255);not null;"`
 	Email     string    `gorm:"uniqueIndex"`
 	Password  string	`gorm:"type:varchar(255);not null;"`
 	CreatedAt time.Time

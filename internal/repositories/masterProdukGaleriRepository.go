@@ -80,7 +80,7 @@ func (m *masterProdukGaleriRepo) Update(galeri *models.MasterProdukGaleri) error
 			return errors.New("urutan sudah digunakan")
 		}
 	}
-	return m.db.Save(galeri).Error
+	return m.db.Model(&models.MasterProdukGaleri{}).Where("id = ?", galeri.ID).Updates(galeri).Error
 }
 
 var ErrorProdukGaleri = errors.New("produk harus memiliki setidaknya 1 gambar, silahkan update jika ingin merubah gambar ini")

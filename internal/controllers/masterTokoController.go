@@ -8,10 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"e-commerce-go/pkg"
-
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type MasterTokoController struct {
@@ -52,11 +49,6 @@ func (mt *MasterTokoController) UpdateToko(c *gin.Context) {
     }
 
 	if req.Gambar != nil {
-		mimeType := req.Gambar.Header.Get("Content-Type")
-		if mimeType != "image/jpeg" && mimeType != "image/png" && mimeType != "image/jpg" {
-			helpers.Error(c, http.StatusBadRequest, nil, "File logo harus berupa gambar JPEG/JPG atau PNG")
-			return
-		}
 		filename, err := helpers.UploadImage(req.Gambar, "Toko")
 		if err != nil {
 			helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal Saat Menyimpan Gambar")
@@ -70,15 +62,16 @@ func (mt *MasterTokoController) UpdateToko(c *gin.Context) {
 		Nama:        req.Nama,
 		Alamat:      req.Alamat,
 		Gambar:      existing.Gambar,
-		NomorToko:   req.NomorToko,
+		NoTelp:   	 req.NoTelp,
+		IDProvinsi:    req.IDProvinsi,
+		IDKota:        req.IDKota,
+		IDKecamatan:   req.IDKecamatan,
 		AturanPajak: req.AturanPajak,
 	}
 	
-	if err := pkg.DB.Transaction(func(tx *gorm.DB) error {
-		return mt.Repo.Update(id, updatedModel)
-	}); err != nil {
-		helpers.DeleteImage(existing.Gambar)
+	if err := mt.Repo.Update(id, updatedModel); err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal mengupdate data")
+		helpers.DeleteImage(fmt.Sprintf("Toko/%s", existing.Gambar))
 		return
 	}
 	

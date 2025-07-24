@@ -27,7 +27,7 @@ func NewMasterTokoRepository(db *gorm.DB) MasterTokoRepository {
 
 func (r *masterTokoRepo) GetToko() (dto.MasterTokoResponse, error) {
 	var toko models.MasterToko
-	err := r.db.Take(&toko).Error
+	err := r.db.Take(&toko).Preload("DataKecamatan.DataKota.DataProvinsi").Error
 
 	var tokoResponse dto.MasterTokoResponse
 	if err := copier.Copy(&tokoResponse, &toko); err != nil {

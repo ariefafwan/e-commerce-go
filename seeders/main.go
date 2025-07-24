@@ -18,9 +18,11 @@ func main() {
 		seeders.SeedUser(pkg.DB)
 	case "admin":
 		seeders.SeedAdmin(pkg.DB)
-	default:
+	case "all":
 		seeders.SeedMasterToko(pkg.DB)
 		seeders.SeedUser(pkg.DB)
 		seeders.SeedAdmin(pkg.DB)
-	} 
+	default:
+		break
+	}
 }

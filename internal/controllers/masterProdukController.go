@@ -6,6 +6,7 @@ import (
 	"e-commerce-go/internal/repositories"
 	"e-commerce-go/internal/request"
 	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -27,24 +28,48 @@ func NewMasterProdukController(repo repositories.MasterProdukRepository,
 }
 
 func (mp *MasterProdukController) GetAll(c *gin.Context) {
-	data, err := mp.RepoProduk.GetAll()
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := mp.RepoProduk.GetAll(meta)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
 
-	helpers.Success(c, http.StatusOK, data, "Success")
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+	
+	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
 func (mp *MasterProdukController) GetAllByKategori(c *gin.Context) {
 	slug := c.Param("slug")
-	data, err := mp.RepoProduk.GetAllByKategori(slug)
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := mp.RepoProduk.GetAllByKategori(slug, meta)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
 
-	helpers.Success(c, http.StatusOK, data, "Success")
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+	
+	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
 // func (mp *MasterProdukController) GetByID(c *gin.Context) {
@@ -129,12 +154,7 @@ func (mp *MasterProdukController) Create(c *gin.Context) {
 		return
 	}
 
-	mimeType := req.Thumbnail.Header.Get("Content-Type")
-	if mimeType != "image/jpeg" && mimeType != "image/png" && mimeType != "image/jpg" {
-		helpers.Error(c, http.StatusBadRequest, nil, "File logo harus berupa gambar JPEG/JPG atau PNG")
-		return
-	}
-	filename, err := helpers.UploadImage(req.Thumbnail, "Toko")
+	filename, err := helpers.UploadImage(req.Thumbnail, "Produk")
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal Saat Menyimpan Gambar")
 		return
@@ -144,12 +164,18 @@ func (mp *MasterProdukController) Create(c *gin.Context) {
 		Nama:       req.Nama,
 		MinHarga:   req.MinHarga,
 		MaxHarga:   req.MaxHarga,
+		Berat:      req.Berat,
 		Deskripsi: 	req.Deskripsi,
 		Thumbnail: 	filename,
 		Status:     "Non Aktif",
 	}
 
 	if err := mp.RepoProduk.Create(&data, req.IDKategoriProduk); err != nil {
+		errc := helpers.DeleteImage(filename)
+		if errc != nil {
+			helpers.Error(c, http.StatusInternalServerError, "Gagal Hapus Gambar", "Failed")
+			return
+		}
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
@@ -214,12 +240,7 @@ func (mp *MasterProdukController) CreateGaleri(c *gin.Context) {
 		return
 	}
 
-	mimeType := req.Gambar.Header.Get("Content-Type")
-	if mimeType != "image/jpeg" && mimeType != "image/png" && mimeType != "image/jpg" {
-		helpers.Error(c, http.StatusBadRequest, nil, "File logo harus berupa gambar JPEG/JPG atau PNG")
-		return
-	}
-	filename, err := helpers.UploadImage(req.Gambar, "Produk")
+	filename, err := helpers.UploadImage(req.Gambar, "Produk-Galeri")
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal Saat Menyimpan Gambar")
 		return
@@ -237,6 +258,7 @@ func (mp *MasterProdukController) CreateGaleri(c *gin.Context) {
 	}
 
 	if err := mp.RepoProdukGaleri.Create(&data); err != nil {
+		helpers.DeleteImage(fmt.Sprintf("Produk-Galeri/%s", filename))
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
@@ -264,17 +286,12 @@ func (mp *MasterProdukController) Update(c *gin.Context) {
 	}
 
 	if req.Thumbnail != nil {
-		mimeType := req.Thumbnail.Header.Get("Content-Type")
-		if mimeType != "image/jpeg" && mimeType != "image/png" && mimeType != "image/jpg" {
-			helpers.Error(c, http.StatusBadRequest, nil, "File logo harus berupa gambar JPEG/JPG atau PNG")
-			return
-		}
-		filename, err := helpers.UploadImage(req.Thumbnail, "Toko")
+		filename, err := helpers.UploadImage(req.Thumbnail, "Produk")
 		if err != nil {
 			helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal Saat Menyimpan Gambar")
 			return
 		}
-		helpers.DeleteImage(fmt.Sprintf("Toko/%s", existing.Thumbnail))
+		helpers.DeleteImage(fmt.Sprintf("Produk/%s", existing.Thumbnail))
 		existing.Thumbnail = filename
 	}
 
@@ -283,6 +300,7 @@ func (mp *MasterProdukController) Update(c *gin.Context) {
 		Nama:       req.Nama,
 		MinHarga:   req.MinHarga,
 		MaxHarga:   req.MaxHarga,
+		Berat:      req.Berat,
 		Deskripsi: 	req.Deskripsi,
 		Thumbnail: 	existing.Thumbnail,
 	}
@@ -292,7 +310,9 @@ func (mp *MasterProdukController) Update(c *gin.Context) {
 	}
 
 	if err := mp.RepoProduk.Update(&data, req.IDKategoriProduk); err != nil {
-		helpers.DeleteImage(existing.Thumbnail)
+		if req.Thumbnail != nil {
+			helpers.DeleteImage(fmt.Sprintf("Produk/%s", existing.Thumbnail))
+		}
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
@@ -349,17 +369,12 @@ func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 	}
 
 	if req.Gambar != nil {
-		mimeType := req.Gambar.Header.Get("Content-Type")
-		if mimeType != "image/jpeg" && mimeType != "image/png" && mimeType != "image/jpg" {
-			helpers.Error(c, http.StatusBadRequest, nil, "File logo harus berupa gambar JPEG/JPG atau PNG")
-			return
-		}
-		filename, err := helpers.UploadImage(req.Gambar, "Produk")
+		filename, err := helpers.UploadImage(req.Gambar, "Produk-Galeri")
 		if err != nil {
 			helpers.Error(c, http.StatusInternalServerError, err.Error(), "Gagal Saat Menyimpan Gambar")
 			return
 		}
-		helpers.DeleteImage(fmt.Sprintf("Produk/%s", existing.Gambar))
+		helpers.DeleteImage(fmt.Sprintf("Produk-Galeri/%s", existing.Gambar))
 		existing.Gambar = filename
 	}
 	
@@ -377,7 +392,7 @@ func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 	
 	if err := m.RepoProdukGaleri.Update(&data); err != nil {
 		if req.Gambar != nil {
-			helpers.DeleteImage(existing.Gambar)
+			helpers.DeleteImage(fmt.Sprintf("Produk-Galeri/%s", existing.Gambar))
 		}
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
@@ -388,10 +403,17 @@ func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 
 func (m *MasterProdukController) Delete(c *gin.Context) {
 	id := c.Param("id")
-	if err := m.RepoProduk.Delete(id); err != nil {
+	existing, err := m.RepoProduk.GetByID(id)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Data Tidak Ditemukan")
+		return
+	}
+	gambar := existing.Thumbnail
+	if err := m.RepoProdukGaleri.Delete(id); err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
+	helpers.DeleteImage(fmt.Sprintf("Produk/%s", gambar))
 
 	helpers.Success(c, http.StatusOK, nil, "Success")
 }
@@ -419,7 +441,7 @@ func (m *MasterProdukController) DeleteGaleri(c *gin.Context) {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
-	helpers.DeleteImage(gambar)
+	helpers.DeleteImage(fmt.Sprintf("Produk-Galeri/%s", gambar))
 	helpers.Success(c, http.StatusOK, nil, "Success")
 }
 

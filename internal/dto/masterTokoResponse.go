@@ -14,7 +14,7 @@ type MasterTokoResponse struct {
 	Nama       string	 `json:"nama"`
 	Alamat     string	 `json:"alamat"`
 	Gambar     string	 `json:"gambar"`
-	NomorToko  string	 `json:"nomor_toko"`
+	NoTelp  string	 `json:"no_telp"`
 	AturanPajak float64	 `json:"aturan_pajak"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`

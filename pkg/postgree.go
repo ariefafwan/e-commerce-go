@@ -17,7 +17,7 @@ func ConnectDB() {
         "host=%s user=%s password=%s dbname=%s port=%s sslmode=disable search_path=public",
         GetEnv("DB_HOST", "localhost"),
         GetEnv("DB_USER", "postgres"),
-        GetEnv("DB_PASSWORD", "postgres"),
+        GetEnv("DB_PASSWORD", ""),
         GetEnv("DB_NAME", "e-commerce"),
         GetEnv("DB_PORT", "5432"),
     )
@@ -29,12 +29,18 @@ func ConnectDB() {
 
     DB = db
     err = DB.AutoMigrate(
+            &models.MasterProvinsi{},
+            &models.MasterKota{},
+            &models.MasterKecamatan{},
             &models.MasterToko{}, 
             &models.User{}, 
             &models.PersonalAccessToken{},
             &models.MasterPelanggan{},
             &models.MasterAlamatPelanggan{},
             &models.MasterKategoriProduk{},
+            &models.MasterProduk{},
+            &models.MasterProdukGaleri{},
+            &models.MasterProdukVariant{},
         )
     
     if err != nil {

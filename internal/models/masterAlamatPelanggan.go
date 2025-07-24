@@ -8,18 +8,23 @@ import (
 )
 
 type MasterAlamatPelanggan struct {
-	ID            uuid.UUID `gorm:"type:char(36);primaryKey"`
-	IDPelanggan   uuid.UUID `gorm:"type:char(36);not null;"`
+	ID            uuid.UUID `gorm:"type:uuid;primaryKey"`
+	IDPelanggan   uuid.UUID `gorm:"type:uuid;not null;"`
+	Label         string	`gorm:"type:varchar(255);not null;"`
 	AlamatLengkap string	`gorm:"type:text;not null;"`
-	KodePos       string	`gorm:"type:char(10);not null;"`
-	Kota          string	`gorm:"type:varchar(50);not null;"`
-	Negara        string	`gorm:"type:varchar(50);not null;"`
-	NomorPenerima string	`gorm:"type:varchar(20);not null;"`
-	NamaPenerima  string	`gorm:"type:varchar(50);not null;"`
+	KodePos       string	`gorm:"type:varchar(255);not null;"`
+	IDProvinsi    string 	`gorm:"type:varchar(255);not null;"`
+	IDKota        string 	`gorm:"type:varchar(255);not null;"`
+	IDKecamatan   string 	`gorm:"type:varchar(255);not null;"`
+	NomorPenerima string	`gorm:"type:varchar(255);not null;"`
+	NamaPenerima  string	`gorm:"type:varchar(255);not null;"`
 	IsDefault     bool		`gorm:"type:boolean;not null;default:false"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 
+	DataProvinsi  MasterProvinsi `gorm:"foreignKey:IDProvinsi;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataKota      MasterKota `gorm:"foreignKey:IDKota;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataKecamatan MasterKecamatan `gorm:"foreignKey:IDKecamatan;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	DataPelanggan MasterPelanggan `gorm:"foreignKey:IDPelanggan;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 

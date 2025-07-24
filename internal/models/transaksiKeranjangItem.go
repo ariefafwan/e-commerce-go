@@ -8,10 +8,10 @@ import (
 )
 
 type TransaksiKeranjangItem struct {
-	ID              uuid.UUID 	`gorm:"type:char(36);primaryKey"`
-	IDKeranjang     uuid.UUID	`gorm:"type:char(36);not null;"`
-	IDProduk        uuid.UUID	`gorm:"type:char(36);not null;"`
-	IDVariantProduk uuid.UUID	`gorm:"type:char(36);not null;"`
+	ID              uuid.UUID 	`gorm:"type:uuid;primaryKey"`
+	IDKeranjang     uuid.UUID	`gorm:"type:uuid;not null;"`
+	IDProduk        uuid.UUID	`gorm:"type:uuid;not null;"`
+	IDVariantProduk uuid.UUID	`gorm:"type:uuid;not null;"`
 	Quantity        int			`gorm:"type:int;not null;"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time

@@ -5,6 +5,7 @@ import (
 	"e-commerce-go/internal/models"
 	"e-commerce-go/internal/repositories"
 	"e-commerce-go/internal/request"
+	"math"
 
 	"net/http"
 
@@ -21,23 +22,46 @@ func NewMasterAlamatPelangganController(repo repositories.MasterAlamatPelangganR
 }
 
 func (ma *MasterAlamatPelangganController) GetAll(c *gin.Context) {
-	data, err := ma.Repo.GetAll()
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := ma.Repo.GetAll(meta)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
-	helpers.Success(c, http.StatusOK, data, "Success")
+
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
 func (ma *MasterAlamatPelangganController) GetAllByPelanggan(c *gin.Context) {
 	id := c.Param("id")
-	data, err := ma.Repo.GetAllByPelanggan(id)
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := ma.Repo.GetAllByPelanggan(id, meta)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
 
-	helpers.Success(c, http.StatusOK, data, "Success")
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
 func (ma *MasterAlamatPelangganController) GetByID(c *gin.Context) {
@@ -63,10 +87,12 @@ func (ma *MasterAlamatPelangganController) Create(c *gin.Context) {
 
 	data := models.MasterAlamatPelanggan{
 		IDPelanggan:   uuid.MustParse(req.IDPelanggan),
+		Label:         req.Label,
 		AlamatLengkap: req.AlamatLengkap,
 		KodePos:       req.KodePos,
-		Kota:          req.Kota,
-		Negara:        req.Negara,
+		IDProvinsi:    req.IDProvinsi,
+		IDKota:        req.IDKota,
+		IDKecamatan:   req.IDKecamatan,
 		NomorPenerima: req.NomorPenerima,
 		NamaPenerima:  req.NamaPenerima,
 	}
@@ -101,10 +127,12 @@ func (ma *MasterAlamatPelangganController) Update(c *gin.Context) {
 	data := models.MasterAlamatPelanggan{
 		ID:            existing.ID,
 		IDPelanggan:   uuid.MustParse(req.IDPelanggan),
+		Label:         req.Label,
 		AlamatLengkap: req.AlamatLengkap,
 		KodePos:       req.KodePos,
-		Kota:          req.Kota,
-		Negara:        req.Negara,
+		IDProvinsi:    req.IDProvinsi,
+		IDKota:        req.IDKota,
+		IDKecamatan:   req.IDKecamatan,
 		NomorPenerima: req.NomorPenerima,
 		NamaPenerima:  req.NamaPenerima,
 		IsDefault:     existing.IsDefault,

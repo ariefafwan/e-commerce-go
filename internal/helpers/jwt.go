@@ -6,7 +6,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("RAHASIA-KU")
+var jwtKey = []byte("9Cio8wwkiAaGFMAvf62Ahq7UnNDY0NeaLGktqy3TD06iMOll4eJFfadfv37PjCQv")
 
 type JWTClaims struct {
 	UserID string `json:"user_id"`

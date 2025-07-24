@@ -8,11 +8,11 @@ import (
 )
 
 type MasterPelanggan struct {
-	ID            uuid.UUID `gorm:"type:char(36);primaryKey"`
-	IDUser        uuid.UUID	`gorm:"type:char(36);not null;"`
-	NamaLengkap   string	`gorm:"type:varchar(50);not null;"`
-	NamaPanggilan string	`gorm:"type:varchar(50);not null;"`
-	Phone         string	`gorm:"type:varchar(20);not null;"`
+	ID            uuid.UUID `gorm:"type:uuid;primaryKey"`
+	IDUser        uuid.UUID	`gorm:"type:uuid;not null;"`
+	NamaLengkap   string	`gorm:"type:varchar(255);not null;"`
+	NamaPanggilan string	`gorm:"type:varchar(255);not null;"`
+	Phone         string	`gorm:"type:varchar(255);not null;"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DataAlamat  	[]MasterAlamatPelanggan	`gorm:"foreignKey:IDPelanggan"`

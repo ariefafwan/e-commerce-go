@@ -19,7 +19,7 @@ type MasterProdukResponse struct {
 	Deskripsi         string    `json:"deskripsi"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
-	DataKategoriProduk *[]MasterProdukKategoriProduk `json:"data_kategori_produk"`
+	DataKategori 	   *[]MasterProdukKategoriProduk `json:"data_kategori"`
 	DataGaleri         *[]MasterProdukGaleriResponse `json:"data_galeri"`
 	DataVariant        *[]MasterProdukVariantResponse `json:"data_variant"`
 }
@@ -38,9 +38,7 @@ type MasterProdukPreload struct {
 }
 
 type MasterProdukKategoriProduk struct {
-	ID        		uuid.UUID 	`json:"id"`
-	IDProduk      	string    	`json:"id_produk"`
-	IDKategori      uuid.UUID	`json:"id_kategori"`
+	ID     uuid.UUID 	`json:"id_kategori"`
 }
 
 func (m *MasterProdukResponse) FileUrl() string {

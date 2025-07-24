@@ -42,6 +42,8 @@ func DeleteImage(publicID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	publicID = strings.Split(publicID, ".")[0]
+
 	_, err := pkg.Cloud.Upload.Destroy(ctx, uploader.DestroyParams{
 		PublicID: publicID,
 	})

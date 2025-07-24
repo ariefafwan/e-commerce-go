@@ -5,6 +5,7 @@ import (
 	"e-commerce-go/internal/models"
 	"e-commerce-go/internal/repositories"
 	"e-commerce-go/internal/request"
+	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,13 +21,25 @@ func NewMasterPelangganController(repo repositories.MasterPelangganRepository) *
 }
 
 func (mp *MasterPelangganController) GetAll(c *gin.Context) {
-	data, err := mp.Repo.GetAll()
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := mp.Repo.GetAll(meta)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
 
-	helpers.Success(c, http.StatusOK, data, "Success")
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+
+	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
 func (mp *MasterPelangganController) GetByID(c *gin.Context) {

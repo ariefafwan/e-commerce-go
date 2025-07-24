@@ -19,8 +19,22 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 	router.POST("/refresh", authController.Refresh)
 	router.POST("/logout", authController.Logout)
 
+	rajaOngkirRepo := repositories.NewRajaOngkirRepository(db)
+	rajaOngkirController := controllers.NewRajaOngkirController(rajaOngkirRepo)
+	
+	router.GET("/provinsi", rajaOngkirController.GetProvinsi)
+	router.GET("/kota/:id", rajaOngkirController.GetKota)
+	router.GET("/kecamatan/:id", rajaOngkirController.GetKecamatan)
+
 	api := router.Group("/api")
 	{
+		rajaOngkirRepo := repositories.NewRajaOngkirRepository(db)
+		rajaOngkirController := controllers.NewRajaOngkirController(rajaOngkirRepo)
+		
+		api.GET("/provinsi", rajaOngkirController.GetProvinsi)
+		api.GET("/kota/:id", rajaOngkirController.GetKota)
+		api.GET("/kecamatan/:id", rajaOngkirController.GetKecamatan)
+
 		tokoRepo := repositories.NewMasterTokoRepository(db)
 		tokoController := controllers.NewMasterTokoController(tokoRepo)
 		
