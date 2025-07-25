@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"mime/multipart"
+	"path/filepath"
+	"regexp"
 	"time"
 
 	"e-commerce-go/pkg"
@@ -23,8 +25,16 @@ func UploadImage(file *multipart.FileHeader, folder string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	originalName := file.Filename
 	
-	filename := fmt.Sprintf("%d_%s", time.Now().Unix(), file.Filename)
+	ext := filepath.Ext(originalName)
+	nameWithoutExt := strings.TrimSuffix(originalName, ext)
+	
+	reg := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	cleanName := reg.ReplaceAllString(nameWithoutExt, "_")
+	cleanName = strings.Trim(cleanName, "_")
+
+	filename := fmt.Sprintf("%d_%s%s", time.Now().Unix(), cleanName, ext)
 	publicID := strings.Split(filename, ".")[0]
 
 	_, err = pkg.Cloud.Upload.Upload(ctx, src, uploader.UploadParams{

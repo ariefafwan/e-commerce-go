@@ -72,17 +72,6 @@ func (mp *MasterProdukController) GetAllByKategori(c *gin.Context) {
 	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
-// func (mp *MasterProdukController) GetByID(c *gin.Context) {
-// 	id := c.Param("id")
-// 	data, err := mp.RepoProduk.GetByID(id)
-// 	if err != nil {
-// 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
-// 		return
-// 	}
-
-// 	helpers.Success(c, http.StatusOK, data, "Success")
-// }
-
 func (mp *MasterProdukController) GetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
 	data, err := mp.RepoProduk.GetBySlug(slug)
@@ -95,8 +84,8 @@ func (mp *MasterProdukController) GetBySlug(c *gin.Context) {
 }
 
 func (mp *MasterProdukController) GetAllVariant(c *gin.Context) {
-	id := c.Param("id")
-	data, err := mp.RepoProdukVariant.GetAll(id)
+	slug_produk := c.Param("slug")
+	data, err := mp.RepoProdukVariant.GetAll(slug_produk)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
@@ -117,8 +106,8 @@ func (mp *MasterProdukController) GetVariantByID(c *gin.Context) {
 }
 
 func (mp *MasterProdukController) GetAllGaleri(c *gin.Context) {
-	id := c.Param("id")
-	data, err := mp.RepoProdukGaleri.GetAll(id)
+	slug_produk := c.Param("slug")
+	data, err := mp.RepoProdukGaleri.GetAll(slug_produk)
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
@@ -184,6 +173,7 @@ func (mp *MasterProdukController) Create(c *gin.Context) {
 }
 
 func (mp *MasterProdukController) CreateVariant(c *gin.Context) {
+	slug_produk := c.Param("slug")
 	var req request.ProdukVariantRequest
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
@@ -194,22 +184,28 @@ func (mp *MasterProdukController) CreateVariant(c *gin.Context) {
 		helpers.Error(c, http.StatusUnprocessableEntity, errors, "Validasi gagal")
 		return
 	}
+	
+	produk, err := mp.RepoProduk.GetBySlug(slug_produk)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Produk Tidak Ditemukan")
+		return
+	}
 
-	count, err := mp.RepoProdukVariant.CountAllByProduct(req.IDProduk)
+	count, err := mp.RepoProdukVariant.CountAllByProduct(produk.ID.String())
 	if err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
 	
 	if count < 1 {
-		if err := mp.RepoProduk.UpdateStatus(req.IDProduk, "Aktif"); err != nil {
+		if err := mp.RepoProduk.UpdateStatus(produk.ID.String(), "Aktif"); err != nil {
 			helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 			return
 		}
 	}
 
 	data := models.MasterProdukVariant{
-		IDProduk: 		 uuid.MustParse(req.IDProduk),
+		IDProduk: 		 produk.ID,
 		NamaVariant:     req.NamaVariant,
 		Harga:    		 req.Harga,
 		Stok:    		 req.Stok,
@@ -224,6 +220,7 @@ func (mp *MasterProdukController) CreateVariant(c *gin.Context) {
 }
 
 func (mp *MasterProdukController) CreateGaleri(c *gin.Context) {
+	slug_produk := c.Param("slug")
 	var req request.ProdukGaleriRequest
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
@@ -232,6 +229,12 @@ func (mp *MasterProdukController) CreateGaleri(c *gin.Context) {
 
 	if errors := request.ValidateStruct(req); errors != nil {
 		helpers.Error(c, http.StatusUnprocessableEntity, errors, "Validasi gagal")
+		return
+	}
+
+	produk, err := mp.RepoProduk.GetBySlug(slug_produk)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Produk Tidak Ditemukan")
 		return
 	}
 
@@ -247,8 +250,8 @@ func (mp *MasterProdukController) CreateGaleri(c *gin.Context) {
 	}
 
 	data := models.MasterProdukGaleri{
-		IDProduk:   uuid.MustParse(req.IDProduk),
-		Gambar:  filename,
+		IDProduk:   produk.ID,
+		Gambar:  	filename,
 	}
 
 	if req.Urutan != nil {
@@ -268,8 +271,8 @@ func (mp *MasterProdukController) CreateGaleri(c *gin.Context) {
 
 func (mp *MasterProdukController) Update(c *gin.Context) {
 	var req request.ProdukRequest
-	id := c.Param("id")
-	existing, err := mp.RepoProduk.GetByID(id)
+	slug_produk := c.Param("slug")
+	existing, err := mp.RepoProduk.GetBySlug(slug_produk)
 	if err != nil {
 		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Data Tidak Ditemukan")
 		return
@@ -296,7 +299,7 @@ func (mp *MasterProdukController) Update(c *gin.Context) {
 	}
 
 	data := models.MasterProduk{
-		ID:         uuid.MustParse(id),
+		ID:         existing.ID,
 		Nama:       req.Nama,
 		MinHarga:   req.MinHarga,
 		MaxHarga:   req.MaxHarga,
@@ -322,6 +325,7 @@ func (mp *MasterProdukController) Update(c *gin.Context) {
 
 func (mp *MasterProdukController) UpdateVariant(c *gin.Context) {
 	var req request.ProdukVariantRequest
+	slug_produk := c.Param("slug")
 	id := c.Param("id")
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
@@ -333,12 +337,18 @@ func (mp *MasterProdukController) UpdateVariant(c *gin.Context) {
 		return
 	}
 
+	produk, err := mp.RepoProduk.GetBySlug(slug_produk)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Produk Tidak Ditemukan")
+		return
+	}
+
 	data := models.MasterProdukVariant{
-		ID:       uuid.MustParse(id),
+		ID:       		 uuid.MustParse(id),
 		NamaVariant:     req.NamaVariant,
 		Harga:    		 req.Harga,
 		Stok:    		 req.Stok,
-		IDProduk: 		 uuid.MustParse(req.IDProduk),
+		IDProduk: 		 produk.ID,
 	}
 
 	if err := mp.RepoProdukVariant.Update(&data); err != nil {
@@ -352,6 +362,7 @@ func (mp *MasterProdukController) UpdateVariant(c *gin.Context) {
 func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 	var req request.ProdukGaleriRequest
 	id := c.Param("id")
+	slug_produk := c.Param("slug")
 	if err := c.ShouldBind(&req); err != nil {
 		helpers.Error(c, http.StatusBadRequest, err.Error(), "Failed")
 		return
@@ -359,6 +370,12 @@ func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 
 	if errors := request.ValidateStruct(req); errors != nil {
 		helpers.Error(c, http.StatusUnprocessableEntity, errors, "Validasi gagal")
+		return
+	}
+
+	produk, err := m.RepoProduk.GetBySlug(slug_produk)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Produk Tidak Ditemukan")
 		return
 	}
 
@@ -380,7 +397,7 @@ func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 	
 	data := models.MasterProdukGaleri{
 		ID:       uuid.MustParse(id),
-		IDProduk: uuid.MustParse(req.IDProduk),
+		IDProduk: produk.ID,
 		Gambar:   existing.Gambar,
 	}
 
@@ -402,19 +419,18 @@ func (m *MasterProdukController) UpdateGaleri(c *gin.Context) {
 }
 
 func (m *MasterProdukController) Delete(c *gin.Context) {
-	id := c.Param("id")
-	existing, err := m.RepoProduk.GetByID(id)
+	slug_produk := c.Param("slug")
+	existing, err := m.RepoProduk.GetBySlug(slug_produk)
 	if err != nil {
 		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Data Tidak Ditemukan")
 		return
 	}
 	gambar := existing.Thumbnail
-	if err := m.RepoProdukGaleri.Delete(id); err != nil {
+	if err := m.RepoProduk.Delete(existing.ID.String()); err != nil {
 		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
 		return
 	}
 	helpers.DeleteImage(fmt.Sprintf("Produk/%s", gambar))
-
 	helpers.Success(c, http.StatusOK, nil, "Success")
 }
 

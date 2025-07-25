@@ -38,7 +38,7 @@ func (r *masterKategoriProdukRepo) GetAll(q QueryParams) ([]dto.MasterKategoriPr
 	query := r.db.Model(&models.MasterKategoriProduk{}).Preload("DataParent")
 
 	if q.Search != "" {
-		query = query.Where("nama LIKE ?", "%"+q.Search+"%")
+		query = query.Where("nama COLLATE SQL_Latin1_General_CP1_CI_AS LIKE ?", "%"+q.Search+"%")
 	}
 
 	if err := query.Count(&total).Error; err != nil {

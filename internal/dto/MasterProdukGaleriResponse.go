@@ -18,7 +18,7 @@ type MasterProdukGaleriResponse struct {
 }
 
 func (m *MasterProdukGaleriResponse) FileUrl() string {
-	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Toko/%s", m.Gambar)
+	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Produk-Galeri/%s", m.Gambar)
 }
 
 func (m MasterProdukGaleriResponse) MarshalJSON() ([]byte, error) {

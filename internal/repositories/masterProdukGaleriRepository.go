@@ -10,7 +10,7 @@ import (
 )
 
 type MasterProdukGaleriRepository interface {
-	GetAll(id string) ([]dto.MasterProdukGaleriResponse, error)
+	GetAll(slug_produk string) ([]dto.MasterProdukGaleriResponse, error)
 	GetByID(id string) (*dto.MasterProdukGaleriResponse, error)
 	Create(galeri *models.MasterProdukGaleri) error
 	Update(galeri *models.MasterProdukGaleri) error
@@ -25,9 +25,14 @@ func NewMasterProdukGaleriRepository(db *gorm.DB) MasterProdukGaleriRepository {
 	return &masterProdukGaleriRepo{db}
 }
 
-func (m *masterProdukGaleriRepo) GetAll(id string) ([]dto.MasterProdukGaleriResponse, error) {
+func (m *masterProdukGaleriRepo) GetAll(slug_produk string) ([]dto.MasterProdukGaleriResponse, error) {
 	var galeri []models.MasterProdukGaleri
-	err := m.db.Find(&galeri, "id_produk = ?", id).Error
+	var dataProduk models.MasterProduk
+	err := m.db.Model(&models.MasterProduk{}).Where("slug = ?", slug_produk).First(&dataProduk).Error
+	if err != nil {
+		return nil, err
+	}
+	err = m.db.Find(&galeri, "id_produk = ?", dataProduk.ID).Error
 	if err != nil {
 		return nil, err
 	}

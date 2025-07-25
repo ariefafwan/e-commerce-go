@@ -100,28 +100,28 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		produkVariantRepo := repositories.NewMasterProdukVariantRepository(db)
 		produkGaleriRepo := repositories.NewMasterProdukGaleriRepository(db)
 		produkController := controllers.NewMasterProdukController(produkRepo, produkVariantRepo, produkGaleriRepo)
-		
+
 		AdminProduk := api.Group("/master-produk")
 		AdminProduk.Use(middleware.AuthMiddleware("Admin"))
 		{
 			AdminProduk.POST("/", produkController.Create)
-			AdminProduk.PUT("/:id", produkController.Update)
-			AdminProduk.DELETE("/:id", produkController.Delete)
+			AdminProduk.PUT("/:slug", produkController.Update)
+			AdminProduk.DELETE("/:slug", produkController.Delete)
 
-			produkVariant := AdminProduk.Group("/variant")
+			produkVariant := AdminProduk.Group("/:slug/variant")
 			{
 				produkVariant.GET("/", produkController.GetAllVariant)
 				produkVariant.GET("/:id", produkController.GetVariantByID)
-				produkVariant.POST("/", produkController.CreateVariant)
+				produkVariant.POST("", produkController.CreateVariant)
 				produkVariant.PUT("/:id", produkController.UpdateVariant)
 				produkVariant.DELETE("/:id", produkController.DeleteVariant)
 			}
 
-			produkGaleri := AdminProduk.Group("/galeri")
+			produkGaleri := AdminProduk.Group("/:slug/galeri")
 			{
 				produkGaleri.GET("/", produkController.GetAllGaleri)
 				produkGaleri.GET("/:id", produkController.GetGaleriByID)
-				produkGaleri.POST("/", produkController.CreateGaleri)
+				produkGaleri.POST("", produkController.CreateGaleri)
 				produkGaleri.PUT("/:id", produkController.UpdateGaleri)
 				produkGaleri.DELETE("/:id", produkController.DeleteGaleri)
 			}
@@ -131,8 +131,9 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		produk.Use(middleware.AuthMiddleware("Admin", "Pelanggan"))
 		{
 			produk.GET("/", produkController.GetAll)
-			produk.GET("/:slug", produkController.GetBySlug)
 			produk.GET("/kategori/:slug", produkController.GetAllByKategori)
+			produk.GET("/:slug", produkController.GetBySlug)
 		}
+		
 	}
 }

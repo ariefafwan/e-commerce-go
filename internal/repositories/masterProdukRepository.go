@@ -15,7 +15,7 @@ import (
 type MasterProdukRepository interface {
 	GetAll(q QueryParams) ([]dto.MasterProdukResponse, int64, error)
 	GetAllByKategori(slug string, q QueryParams) ([]dto.MasterProdukResponse, int64,error)
-	GetByID(id string) (dto.MasterProdukResponse, error)
+	// GetByID(id string) (dto.MasterProdukResponse, error)
 	GetBySlug(slug string) (dto.MasterProdukResponse, error)
 	UpdateStatus(id string, status string) error
 	Create(produk *models.MasterProduk, kategoris []string) error
@@ -128,19 +128,19 @@ func (m *masterProdukRepo) GetAllByKategori(slug string, q QueryParams) ([]dto.M
 	return produkResponse, total, err
 }
 
-func (m *masterProdukRepo) GetByID(id string) (dto.MasterProdukResponse, error) {
-	var produk models.MasterProduk
-	err := m.db.Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant").First(&produk, "id = ?", id).Error
-	if err != nil {
-		return dto.MasterProdukResponse{}, err
-	}
+// func (m *masterProdukRepo) GetByID(id string) (dto.MasterProdukResponse, error) {
+// 	var produk models.MasterProduk
+// 	err := m.db.Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant").First(&produk, "id = ?", id).Error
+// 	if err != nil {
+// 		return dto.MasterProdukResponse{}, err
+// 	}
 
-	var produkResponse dto.MasterProdukResponse
-	if err := copier.Copy(&produkResponse, &produk); err != nil {
-		return dto.MasterProdukResponse{}, err
-	}
-	return produkResponse, nil
-}
+// 	var produkResponse dto.MasterProdukResponse
+// 	if err := copier.Copy(&produkResponse, &produk); err != nil {
+// 		return dto.MasterProdukResponse{}, err
+// 	}
+// 	return produkResponse, nil
+// }
 
 func (m *masterProdukRepo) GetBySlug(slug string) (dto.MasterProdukResponse, error) {
 	var produk models.MasterProduk
@@ -157,24 +157,50 @@ func (m *masterProdukRepo) GetBySlug(slug string) (dto.MasterProdukResponse, err
 }
 
 func (m *masterProdukRepo) Create(produk *models.MasterProduk, kategoris []string) error {
+	tx := m.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var kategori []models.MasterKategoriProduk
-	err := m.db.Where("id IN ?", kategoris).Find(&kategori).Error
+	err := tx.Where("id IN ?", kategoris).Find(&kategori).Error
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	if len(kategori) != len(kategoris) {
+		tx.Rollback()
 		return errors.New("kategori tidak ditemukan")
 	}
 
-	produk.DataKategori = kategori	
-	return m.db.Create(&produk).Error
+	if err := tx.Create(produk).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(produk).Association("DataKategori").Append(&kategori); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 func (m *masterProdukRepo) Update(produk *models.MasterProduk, kategoris []string) error {
+	tx := m.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	var data models.MasterProduk
-	err := m.db.First(&data, "id = ?", produk.ID).Error
+	err := tx.First(&data, "id = ?", produk.ID).Error
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	if data.Nama != produk.Nama {
@@ -183,8 +209,9 @@ func (m *masterProdukRepo) Update(produk *models.MasterProduk, kategoris []strin
 		counter := 1
 		for {
 			var count int64
-			err := m.db.Model(&models.MasterProduk{}).Where("slug = ?", data.Slug).Count(&count).Error
+			err := tx.Model(&models.MasterProduk{}).Where("slug = ?", slug).Count(&count).Error
 			if err != nil {
+				tx.Rollback()
 				return err
 			}
 			if count == 0 {
@@ -196,12 +223,29 @@ func (m *masterProdukRepo) Update(produk *models.MasterProduk, kategoris []strin
 		produk.Slug = slug
 	}
 	var kategori []models.MasterKategoriProduk
-	err = m.db.Where("id IN ?", kategoris).Find(&kategori).Error
+	err = tx.Where("id IN ?", kategoris).Find(&kategori).Error
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
-	produk.DataKategori = kategori
-	return m.db.Model(&models.MasterProduk{}).Where("id = ?", produk.ID).Updates(&produk).Error
+
+	if len(kategori) != len(kategoris) {
+		tx.Rollback()
+		return errors.New("kategori tidak ditemukan")
+	}
+
+	err = tx.Model(&models.MasterProduk{}).Where("id = ?", produk.ID).Updates(produk).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(&produk).Association("DataKategori").Replace(kategori); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 
@@ -210,5 +254,28 @@ func (m *masterProdukRepo) UpdateStatus(id string, status string) error {
 }
 
 func (m *masterProdukRepo) Delete(id string) error {
-	return m.db.Delete(&models.MasterProduk{}, "id = ?", id).Error
+	tx := m.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	var produk models.MasterProduk
+	if err := tx.Preload("DataKategori").First(&produk, "id = ?", id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Model(&produk).Association("DataKategori").Clear(); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err := tx.Delete(&produk).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }

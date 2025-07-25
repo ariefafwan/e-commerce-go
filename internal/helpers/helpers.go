@@ -26,6 +26,7 @@ func UploadImage(file *multipart.FileHeader, folder string) (string, error) {
 	if mimeType != "image/jpeg" && mimeType != "image/png" && mimeType != "image/jpg" {
 		return "", errors.New("file logo harus berupa gambar .jpeg/jpg atau .png")
 	}
+	
 	return cloudinary.UploadImage(file, folder)
 }
 

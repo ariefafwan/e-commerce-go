@@ -11,7 +11,7 @@ import (
 )
 
 type MasterProdukVariantRepository interface {
-	GetAll(id string) ([]dto.MasterProdukVariantResponse, error)
+	GetAll(slug_produk string) ([]dto.MasterProdukVariantResponse, error)
 	CountAllByProduct(id_produk string) (int64, error)
 	GetByID(id string) (*dto.MasterProdukVariantResponse, error)
 	Create(masterProdukVariant *models.MasterProdukVariant) (error)
@@ -27,9 +27,14 @@ func NewMasterProdukVariantRepository(db *gorm.DB) MasterProdukVariantRepository
 	return &masterProdukVariantRepo{db}
 }
 
-func (m *masterProdukVariantRepo) GetAll(id string) ([]dto.MasterProdukVariantResponse, error) {
+func (m *masterProdukVariantRepo) GetAll(slug_produk string) ([]dto.MasterProdukVariantResponse, error) {
 	var masterProdukVariant []models.MasterProdukVariant
-	err := m.db.Find(&masterProdukVariant, "id_produk = ?", id).Error
+	var dataProduk models.MasterProduk
+	err := m.db.Model(&models.MasterProduk{}).Where("slug = ?", slug_produk).First(&dataProduk).Error
+	if err != nil {
+		return nil, err
+	}
+	err = m.db.Find(&masterProdukVariant, "id_produk = ?", dataProduk.ID).Error
 	if err != nil {
 		return nil, err
 	}

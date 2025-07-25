@@ -76,7 +76,7 @@ func (r *masterAlamatPelangganRepo) GetAllByPelanggan(id string, q QueryParams) 
 	query := r.db.Model(&models.MasterAlamatPelanggan{})
 
 	if q.Search != "" {
-		query = query.Where("id_pelanggan = ? AND label LIKE ?", id, "%"+q.Search+"%").Preload("DataKecamatan.DataKota.DataProvinsi").Preload("DataPelanggan")
+		query = query.Where("id_pelanggan = ? AND label COLLATE SQL_Latin1_General_CP1_CI_AS LIKE ?", id, "%"+q.Search+"%").Preload("DataKecamatan.DataKota.DataProvinsi").Preload("DataPelanggan")
 	}
 
 	if err := query.Count(&total).Error; err != nil {

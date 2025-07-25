@@ -42,7 +42,7 @@ type MasterProdukKategoriProduk struct {
 }
 
 func (m *MasterProdukResponse) FileUrl() string {
-	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Toko/%s", m.Thumbnail)
+	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Produk/%s", m.Thumbnail)
 }
 
 func (m MasterProdukResponse) MarshalJSON() ([]byte, error) {
@@ -57,7 +57,7 @@ func (m MasterProdukResponse) MarshalJSON() ([]byte, error) {
 }
 
 func (m *MasterProdukPreload) FileUrl() string {
-	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Toko/%s", m.Thumbnail)
+	return fmt.Sprintf("https://res.cloudinary.com/dnabtsqjy/image/upload/Produk/%s", m.Thumbnail)
 }
 
 func (m MasterProdukPreload) MarshalJSON() ([]byte, error) {

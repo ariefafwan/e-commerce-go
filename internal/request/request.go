@@ -69,13 +69,11 @@ type ProdukRequest struct {
 
 type ProdukVariantRequest struct {
 	NamaVariant string					`form:"nama_variant" validate:"required,min=2,max=100"`
-	IDProduk 	string					`form:"id_produk" validate:"required,fk_exists=master_produk:id"`
 	Harga 		float64					`form:"harga" validate:"required"`
 	Stok 		int						`form:"stok" validate:"required"`
 }
 
 type ProdukGaleriRequest struct {
-	IDProduk 	string					`form:"id_produk" validate:"required,fk_exists=master_produk:id"`
 	Gambar 		*multipart.FileHeader 	`form:"gambar" validate:"required"`
 	Urutan 		*uint8					`form:"urutan" validate:"omitempty,unique_except=master_produk_galeri:urutan:id"`
 }
