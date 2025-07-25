@@ -4,6 +4,7 @@ import (
 	"e-commerce-go/pkg"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -57,6 +58,7 @@ func init() {
 		return true
 	})
 
+	// Register custom validator: unique_except
 	validate.RegisterValidation("unique_except", func(fld validator.FieldLevel) bool {
 		params := fld.Param()
 		parts := strings.Split(params, ":")
@@ -78,7 +80,6 @@ func init() {
 			return false
 		}
 
-		// query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s = ? AND id != ?", table, column)
 		var count int64
 		db := pkg.DB
 		err := db.Table(table).Where(column + " = ? AND id != ?", value, excludeID.Interface()).Scan(&count).Error
@@ -86,6 +87,16 @@ func init() {
 			return false
 		}
 		return true
+	})
+
+	validate.RegisterValidation("date_format", func(fl validator.FieldLevel) bool {
+		dateStr := fl.Field().String()
+		if dateStr == "" {
+			return true
+		}
+		
+		_, err := time.Parse("02-01-2006", dateStr)
+		return err == nil
 	})
 }
 
@@ -111,6 +122,8 @@ func ValidateStruct(data interface{}) map[string]string {
 			errors[field] = field + " sudah digunakan"
 		case "unique_except":
 			errors[field] = field + " sudah digunakan"
+		case "date_format":
+			errors[field] = field + " harus berformat DD-MM-YYYY (contoh: 27-09-2025)"
 		default:
 			errors[field] = "Field " + strings.ToLower(field) + " tidak valid"
 		}

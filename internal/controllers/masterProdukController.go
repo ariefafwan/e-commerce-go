@@ -72,6 +72,28 @@ func (mp *MasterProdukController) GetAllByKategori(c *gin.Context) {
 	helpers.Success(c, http.StatusOK, response, "Success")
 }
 
+func (mp *MasterProdukController) GetProdukNonAktif(c *gin.Context) {
+	meta := helpers.ParseQueryParams(c)
+
+	data, total, err := mp.RepoProduk.GetProdukNonAktif(meta)
+	if err != nil {
+		helpers.Error(c, http.StatusInternalServerError, err.Error(), "Failed")
+		return
+	}
+
+	totalPages := int(math.Ceil(float64(total) / float64(meta.Limit)))
+
+	response := gin.H{
+		"data":        data,
+		"total_items": total,
+		"total_pages": totalPages,
+		"current_page": meta.Page,
+		"limit":        meta.Limit,
+	}
+	
+	helpers.Success(c, http.StatusOK, response, "Success")
+}
+
 func (mp *MasterProdukController) GetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
 	data, err := mp.RepoProduk.GetBySlug(slug)

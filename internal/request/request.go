@@ -77,3 +77,20 @@ type ProdukGaleriRequest struct {
 	Gambar 		*multipart.FileHeader 	`form:"gambar" validate:"required"`
 	Urutan 		*uint8					`form:"urutan" validate:"omitempty,unique_except=master_produk_galeri:urutan:id"`
 }
+
+type UpdateKeranjangRequest struct {
+	IDPelanggan  	string  			`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
+	BerlakuSampai   *string 			`form:"berlaku_sampai" validate:"required,date_format,future_date"`
+}
+
+type CreateKeranjangItemRequest struct {
+	IDPelanggan  	string  			`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
+	IDVariantProduk string  			`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
+	Quantity     	int					`form:"quantity" validate:"required,min=1"`
+}
+
+type UpdateKeranjangItemRequest struct {
+	IDKeranjang  	string  			`form:"id_keranjang" validate:"required,fk_exists=transaksi_keranjang:id"`
+	IDVariantProduk string  			`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
+	Quantity     	int					`form:"quantity" validate:"required,min=1"`
+}

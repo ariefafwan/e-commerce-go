@@ -105,6 +105,7 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		AdminProduk.Use(middleware.AuthMiddleware("Admin"))
 		{
 			AdminProduk.POST("/", produkController.Create)
+			AdminProduk.GET("/non-aktif", produkController.GetProdukNonAktif)
 			AdminProduk.PUT("/:slug", produkController.Update)
 			AdminProduk.DELETE("/:slug", produkController.Delete)
 
@@ -134,6 +135,27 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 			produk.GET("/kategori/:slug", produkController.GetAllByKategori)
 			produk.GET("/:slug", produkController.GetBySlug)
 		}
-		
+
+		transaksiKeranjangItemRepo := repositories.NewTransaksiKeranjangItemRepository(db)
+		transaksiKeranjangRepo := repositories.NewTransaksiKeranjangRepository(db)
+		keranjangController := controllers.NewTransaksiKeranjangController(transaksiKeranjangRepo, transaksiKeranjangItemRepo, produkVariantRepo)
+
+		AdminKeranjang := api.Group("/keranjang")
+		AdminKeranjang.Use(middleware.AuthMiddleware("Admin"))
+		{
+			AdminKeranjang.GET("/", keranjangController.GetAllKeranjang)
+		}
+
+		keranjang := api.Group("/keranjang")
+		keranjang.Use(middleware.AuthMiddleware("Admin"," Pelanggan"))
+		{
+			keranjang.GET("/pelanggan/:id", keranjangController.GetAllByPelanggan)
+			keranjang.GET("/:id", keranjangController.GetByID)
+			keranjang.POST("/", keranjangController.Create)
+			keranjang.PUT("/:id", keranjangController.Update)
+			keranjang.PUT("/item/:id", keranjangController.UpdateItem)
+			keranjang.DELETE("/:id", keranjangController.Delete)
+			keranjang.DELETE("/item/:id", keranjangController.DeleteItem)
+		}
 	}
 }

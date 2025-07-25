@@ -14,8 +14,8 @@ import (
 
 type MasterProdukRepository interface {
 	GetAll(q QueryParams) ([]dto.MasterProdukResponse, int64, error)
-	GetAllByKategori(slug string, q QueryParams) ([]dto.MasterProdukResponse, int64,error)
-	// GetByID(id string) (dto.MasterProdukResponse, error)
+	GetAllByKategori(slug string, q QueryParams) ([]dto.MasterProdukResponse, int64, error)
+	GetProdukNonAktif(q QueryParams) ([]dto.MasterProdukResponse, int64, error)
 	GetBySlug(slug string) (dto.MasterProdukResponse, error)
 	UpdateStatus(id string, status string) error
 	Create(produk *models.MasterProduk, kategoris []string) error
@@ -41,10 +41,19 @@ func (m *masterProdukRepo) GetAll(q QueryParams) ([]dto.MasterProdukResponse, in
 		q.Sort = "asc"
 	}
 
-	query := m.db.Model(&models.MasterProduk{}).Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant")
+	query := m.db.Model(&models.MasterProduk{}).
+					Preload("DataKategori").
+					Preload("DataGaleri").
+					Preload("DataVariant").
+					Where("status = ?", "Aktif").
+					Where("EXISTS (?)",
+							m.db.Table("master_produk_variant").
+								Select("1").
+								Where("master_produk_variant.id_produk = master_produk.id AND master_produk_variant.stok > 0"),
+						)
 
 	if q.Search != "" {
-		query = query.Where("nama LIKE ?", "%"+q.Search+"%")
+		query = query.Where("nama ILIKE ?", "%"+q.Search+"%")
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -97,14 +106,20 @@ func (m *masterProdukRepo) GetAllByKategori(slug string, q QueryParams) ([]dto.M
 	query := m.db.Model(&models.MasterProduk{}).Preload("DataKategori").
 		Preload("DataGaleri").
 		Preload("DataVariant").
+		Where("status = ?", "Aktif").
 		Where("id IN (?)",
 			m.db.Table("master_produk_kategori_produk").
 				Select("id_produk").
 				Where("id_kategori IN ?", kategoriIDs),
+		).
+		Where("EXISTS (?)",
+			m.db.Table("master_produk_variant").
+				Select("1").
+				Where("master_produk_variant.id_produk = master_produk.id AND master_produk_variant.stok > 0"),
 		)
 
 	if q.Search != "" {
-		query = query.Where("nama LIKE ?", "%"+q.Search+"%")
+		query = query.Where("nama ILIKE ?", "%"+q.Search+"%")
 	}
 
 	if err := query.Count(&total).Error; err != nil {
@@ -128,19 +143,44 @@ func (m *masterProdukRepo) GetAllByKategori(slug string, q QueryParams) ([]dto.M
 	return produkResponse, total, err
 }
 
-// func (m *masterProdukRepo) GetByID(id string) (dto.MasterProdukResponse, error) {
-// 	var produk models.MasterProduk
-// 	err := m.db.Preload("DataKategori").Preload("DataGaleri").Preload("DataVariant").First(&produk, "id = ?", id).Error
-// 	if err != nil {
-// 		return dto.MasterProdukResponse{}, err
-// 	}
+func (m *masterProdukRepo) GetProdukNonAktif(q QueryParams) ([]dto.MasterProdukResponse, int64, error) {
+	var produk []models.MasterProduk
+	var total int64
 
-// 	var produkResponse dto.MasterProdukResponse
-// 	if err := copier.Copy(&produkResponse, &produk); err != nil {
-// 		return dto.MasterProdukResponse{}, err
-// 	}
-// 	return produkResponse, nil
-// }
+	offset := (q.Page - 1) * q.Limit
+
+	if q.Sort != "asc" && q.Sort != "desc" {
+		q.Sort = "asc"
+	}
+
+	query := m.db.Model(&models.MasterProduk{}).Preload("DataKategori").
+		Preload("DataGaleri").
+		Preload("DataVariant").
+		Where("status = ?", "Tidak Aktif")
+
+	if q.Search != "" {
+		query = query.Where("nama ILIKE ?", "%"+q.Search+"%")
+	}
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	err := query.
+		Order("created_at " + q.Sort).
+		Offset(offset).
+		Limit(q.Limit).
+		Find(&produk).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var produkResponse []dto.MasterProdukResponse
+	if err := copier.Copy(&produkResponse, &produk); err != nil {
+		return nil, 0, err
+	}
+	return produkResponse, total, err
+}
 
 func (m *masterProdukRepo) GetBySlug(slug string) (dto.MasterProdukResponse, error) {
 	var produk models.MasterProduk

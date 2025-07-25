@@ -13,9 +13,9 @@ func SeedUser(db *gorm.DB) {
 	fmt.Println("Seeding User & Pelanggan...")
 	user := models.User{
 		ID: uuid.New(),
-		Nama: "Pelanggan",
+		Nama: "Pelanggan2",
 		Role: models.Pelanggan,
-		Email: "Pelanggan@gmail.com",
+		Email: "pelanggan2@gmail.com",
 		Password: helpers.Hash("123"),
 	}
 
