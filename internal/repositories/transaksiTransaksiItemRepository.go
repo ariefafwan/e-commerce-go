@@ -1,14 +1,15 @@
 package repositories
 
 import (
+	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
 
+	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
 )
 
 type TransaksiItemRepository interface {
-	GetAll() ([]models.TransaksiItem, error)
-	Create(item *models.TransaksiItem) error
+	GetAll(id_transaksi string) ([]dto.TransaksiItemResponse, error)
 	Update(item *models.TransaksiItem) error
 	Delete(id string) error
 }
@@ -21,18 +22,19 @@ func NewTransaksiItemRepository(db *gorm.DB) TransaksiItemRepository {
 	return &transaksiItemRepo{db}
 }
 
-func (m *transaksiItemRepo) GetAll() ([]models.TransaksiItem, error) {
-	var item []models.TransaksiItem
-	err := m.db.Find(&item).Preload("DataProduk").Preload("DataVariant").Preload("DataTransaksi.DataPelanggan").Preload("DataTransaksi.DataAlamat").Error
-	return item, err
-}
+func (m *transaksiItemRepo) GetAll(id_transaksi string) ([]dto.TransaksiItemResponse ,error) {
+	var data models.TransaksiItem
+	err := m.db.Preload("DataProduk").Preload("DataVariant").Preload("DataTransaksi.DataPelanggan").Find(&data, "id_transaksi = ?", id_transaksi).Error
 
-func (m *transaksiItemRepo) Create(item *models.TransaksiItem) error {
-	return m.db.Create(item).Error
+	var response []dto.TransaksiItemResponse
+	if err := copier.Copy(&response, &data); err != nil {
+		return nil, err
+	}
+	return response, err
 }
 
 func (m *transaksiItemRepo) Update(item *models.TransaksiItem) error {
-	return m.db.Save(item).Error
+	return m.db.Model(&models.TransaksiItem{}).Where("id = ?", item.ID).Updates(item).Error
 }
 
 func (m *transaksiItemRepo) Delete(id string) error {

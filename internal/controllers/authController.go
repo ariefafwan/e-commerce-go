@@ -176,11 +176,11 @@ func (a *AuthController) Register(ctx *gin.Context) {
 	)
 
 	helpers.Success(ctx, http.StatusOK, map[string]any{
-		"user":          map[string]any{"id": user.ID, 
-										"email": user.Email, 
-										"nama": user.Nama, 
-										"role": user.Role, 
-										"data_pelanggan": user.DataPelanggan},
+		"user": map[string]any{"id": user.ID, 
+					"email": user.Email, 
+					"nama": user.Nama, 
+					"role": user.Role, 
+					"data_pelanggan": user.DataPelanggan},
 		"access_token"	: accessToken,
 	}, "Success")
 }
@@ -269,7 +269,7 @@ func (a *AuthController) Logout(ctx *gin.Context) {
 	// Hapus refresh token cookie
 	ctx.SetCookie(
 		"refresh_token",
-		"",             // kosongkan value
+		"",             
 		-1,             // hapus
 		"/",
 		"",    			// domain

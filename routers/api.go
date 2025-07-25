@@ -144,18 +144,42 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		AdminKeranjang.Use(middleware.AuthMiddleware("Admin"))
 		{
 			AdminKeranjang.GET("/", keranjangController.GetAllKeranjang)
+			AdminKeranjang.GET("/:id", keranjangController.GetByID)
 		}
 
 		keranjang := api.Group("/keranjang")
 		keranjang.Use(middleware.AuthMiddleware("Admin"," Pelanggan"))
 		{
 			keranjang.GET("/pelanggan/:id", keranjangController.GetAllByPelanggan)
-			keranjang.GET("/:id", keranjangController.GetByID)
 			keranjang.POST("/", keranjangController.Create)
 			keranjang.PUT("/:id", keranjangController.Update)
 			keranjang.PUT("/item/:id", keranjangController.UpdateItem)
 			keranjang.DELETE("/:id", keranjangController.Delete)
 			keranjang.DELETE("/item/:id", keranjangController.DeleteItem)
+		}
+
+		transaksiRepo := repositories.NewTransaksiRepository(db)
+		transaksiItemRepo := repositories.NewTransaksiItemRepository(db)
+		transaksiController := controllers.NewTransaksiController(transaksiRepo, transaksiItemRepo)
+
+		transaksi := api.Group("/transaksi")
+		transaksi.Use(middleware.AuthMiddleware("Admin", "Pelanggan"))
+		{
+			transaksi.GET("/pelanggan/:id", transaksiController.GetAllByPelanggan)
+			transaksi.GET("/:id", transaksiController.GetByID)
+			// transaksi.POST("/", transaksiController.Create)
+			// transaksi.PUT("/:id", transaksiController.Update)
+			transaksi.GET("/item/:id", transaksiController.GetAllItem)
+			// transaksi.DELETE("/:id", transaksiController.Delete)
+			// transaksi.DELETE("/item/:id", transaksiController.DeleteItem)
+			// transaksi.PUT("/status/:id", transaksiController.UpdateStatus)
+			transaksi.POST("/kalkulasi", transaksiController.KalkulasiTransaksi)
+		}
+
+		adminTransaksi := api.Group("/transaksi")
+		adminTransaksi.Use(middleware.AuthMiddleware("Admin"))
+		{
+			transaksi.GET("/", transaksiController.GetAll)
 		}
 	}
 }

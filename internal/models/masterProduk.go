@@ -29,10 +29,9 @@ func (ct *StatusProduk) Scan(value any) error {
     }
     switch StatusProduk(s) {
 		case Aktif, NonAktif:
-			*ct = StatusProduk(s) // Jika valid, tetapkan nilainya
+			*ct = StatusProduk(s)
 			return nil
 		default:
-			// Jika tidak valid, kembalikan error
 			return fmt.Errorf("nilai status tidak valid: %s", s)
     }
 }

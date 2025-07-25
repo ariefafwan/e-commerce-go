@@ -41,6 +41,10 @@ func ConnectDB() {
             &models.MasterProduk{},
             &models.MasterProdukGaleri{},
             &models.MasterProdukVariant{},
+            &models.Transaksi{},
+            &models.TransaksiItem{},
+            &models.TransaksiKeranjang{},
+            &models.TransaksiKeranjangItem{},
         )
     
     if err != nil {

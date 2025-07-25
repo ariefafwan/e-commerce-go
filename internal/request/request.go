@@ -94,3 +94,8 @@ type UpdateKeranjangItemRequest struct {
 	IDVariantProduk string  			`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
 	Quantity     	int					`form:"quantity" validate:"required,min=1"`
 }
+
+type KalkulasiTransaksiRequest struct {
+	IDItems 				[]string  			`form:"id_items" validate:"required"`
+	IDAlamatPelanggan 		*string  			`form:"id_alamat_pelanggan" validate:"omitempty,fk_exists=master_alamat_pelanggan:id"`
+}

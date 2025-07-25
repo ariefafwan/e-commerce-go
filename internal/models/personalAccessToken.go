@@ -28,10 +28,9 @@ func (ct *TipeToken) Scan(value interface{}) error {
     }
     switch TipeToken(s) {
 		case AccessToken, RefreshToken:
-			*ct = TipeToken(s) // Jika valid, tetapkan nilainya
+			*ct = TipeToken(s)
 			return nil
 		default:
-			// Jika tidak valid, kembalikan error
 			return fmt.Errorf("nilai tipe token tidak valid: %s", s)
     }
 }

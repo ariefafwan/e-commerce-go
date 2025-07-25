@@ -14,7 +14,7 @@ type StatusTransaksi string
 
 const (
     Pending    	StatusTransaksi = "Pending"
-    Paid 		StatusTransaksi = "Admin"
+    Paid 		StatusTransaksi = "Paid"
 	Complete 	StatusTransaksi = "Complete"
 )
 
@@ -29,10 +29,9 @@ func (ct *StatusTransaksi) Scan(value interface{}) error {
     }
     switch StatusTransaksi(s) {
 		case Pending, Paid, Complete:
-			*ct = StatusTransaksi(s) // Jika valid, tetapkan nilainya
+			*ct = StatusTransaksi(s)
 			return nil
 		default:
-			// Jika tidak valid, kembalikan error
 			return fmt.Errorf("nilai status tidak valid: %s", s)
     }
 }
@@ -51,10 +50,11 @@ type Transaksi struct {
 	JumlahItem		   int16	 `gorm:"type:int;not null;"`
 	BeratTotal 		   float64	 `gorm:"type:float;not null;"`
 	Pajak              float64	 `gorm:"type:float;not null;"`
-	Notes              string	 `gorm:"type:text;not null;"`
+	GrandTotal         float64	 `gorm:"type:float;not null;"`
+	Notes              *string	 `gorm:"type:text;not null;"`
 	Status             StatusTransaksi 	`gorm:"type:varchar(255);not null;default:Pending"`
-	PaidAt     		   time.Time
-	CompleteAt         time.Time
+	PaidAt     		   *time.Time
+	CompleteAt         *time.Time
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 

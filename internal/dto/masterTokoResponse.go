@@ -16,6 +16,7 @@ type MasterTokoResponse struct {
 	Gambar     string	 `json:"gambar"`
 	NoTelp  string	 `json:"no_telp"`
 	AturanPajak float64	 `json:"aturan_pajak"`
+	DataKecamatan MasterKecamatanResponse `json:"data_kecamatan"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }

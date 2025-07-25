@@ -38,7 +38,7 @@ func (t *transaksiKeranjangRepo) GetAll(q QueryParams) ([]dto.TransaksiKeranjang
 		q.Sort = "asc"
 	}
 
-	query := t.db.Model(&models.TransaksiKeranjang{}).Preload("DataPelanggan").Preload("DataItems")
+	query := t.db.Model(&models.TransaksiKeranjang{}).Preload("DataPelanggan").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
 
 	if q.Search != "" {
 		query = query.Where("id_pelanggan IN (?)",
@@ -68,7 +68,7 @@ func (t *transaksiKeranjangRepo) GetAll(q QueryParams) ([]dto.TransaksiKeranjang
 
 func (t *transaksiKeranjangRepo) GetAllByPelanggan(id_pelanggan string) ([]dto.TransaksiKeranjangResponse, error) {
 	var keranjangs []models.TransaksiKeranjang
-	err := t.db.Preload("DataPelanggan").Preload("DataItems").Where("id_pelanggan = ?", id_pelanggan).Find(&keranjangs).Error
+	err := t.db.Preload("DataPelanggan").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").Where("id_pelanggan = ?", id_pelanggan).Find(&keranjangs).Error
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (t *transaksiKeranjangRepo) GetAllByPelanggan(id_pelanggan string) ([]dto.T
 
 func (t *transaksiKeranjangRepo) GetByID(id string) (*dto.TransaksiKeranjangResponse, error) {
 	var keranjang models.TransaksiKeranjang
-	err := t.db.Preload("DataPelanggan").Preload("DataItems").First(&keranjang, "id = ?", id).Error
+	err := t.db.Preload("DataPelanggan").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&keranjang, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

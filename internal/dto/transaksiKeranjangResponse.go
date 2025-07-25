@@ -25,7 +25,7 @@ type TransaksiKeranjangItemResponse struct {
 	IDVariantProduk uuid.UUID `json:"id_variant_produk"`
 	Quantity      int       `json:"jumlah"`
 	DataProduk    MasterProdukPreload `json:"data_produk"`
-	DataProdukVariant MasterProdukVariantResponse `json:"data_produk_variant"`
+	DataVariant MasterProdukVariantResponse `json:"data_produk_variant"`
 
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`

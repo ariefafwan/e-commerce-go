@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -150,5 +151,61 @@ func GetDistrict(cityID string) (DistrictResponse, error) {
 
 	return parsed, nil
 }
+type CalculateCostResponse struct {
+	Meta struct {
+		Message string `json:"message"`
+		Code    int    `json:"code"`
+		Status  string `json:"status"`
+	} `json:"meta"`
+	Data []ShippingOption `json:"data"`
+}
 
+type ShippingOption struct {
+	Name        string `json:"name"`
+	Code        string `json:"code"`
+	Service     string `json:"service"`
+	Description string `json:"description"`
+	Cost        int    `json:"cost"`
+	Etd         string `json:"etd"`
+}
 
+func CalculateShippingCost(originID, destinationID string, weight int) (*CalculateCostResponse, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	url := "https://rajaongkir.komerce.id/api/v1/calculate/district/domestic-cost"
+
+	courierList := "jne:sicepat:jnt:ninja:tiki:lion:pos"
+
+	payload := fmt.Sprintf(
+		"origin=%s&destination=%s&weight=%d&courier=%s&price=lowest",
+		originID, destinationID, weight, courierList,
+	)
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(payload))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	req.Header.Add("key", pkg.GetEnv("RAJA_ONGKIR_API_KEY", "1234567"))
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	
+	var parsed CalculateCostResponse
+	if err := json.Unmarshal(body, &parsed); err != nil {
+		return nil, err
+	}
+
+	if parsed.Meta.Code != 200 {
+		return nil, errors.New(parsed.Meta.Message)
+	}
+
+	return &parsed, nil
+}
