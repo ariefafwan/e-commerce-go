@@ -14,6 +14,8 @@ type StatusTransaksi string
 
 const (
     Pending    	StatusTransaksi = "Pending"
+	Cancelled 	StatusTransaksi = "Cancelled"
+	Expired 	StatusTransaksi = "Expired"
     Paid 		StatusTransaksi = "Paid"
 	Complete 	StatusTransaksi = "Complete"
 )
@@ -55,7 +57,8 @@ type Transaksi struct {
 	GrandTotal         float64	 `gorm:"type:float;not null;"`
 	Notes              *string	 `gorm:"type:text;"`
 	Status             StatusTransaksi 	`gorm:"type:varchar(255);not null;default:Pending"`
-	PendingSampai      *time.Time
+	ExpiredAt          *time.Time
+	CancelledAt        *time.Time
 	PaidAt     		   *time.Time
 	CompleteAt         *time.Time
 	CreatedAt          time.Time

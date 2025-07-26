@@ -145,6 +145,7 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		{
 			AdminKeranjang.GET("/", keranjangController.GetAllKeranjang)
 			AdminKeranjang.GET("/:id", keranjangController.GetByID)
+			AdminKeranjang.PUT("/:id", keranjangController.Update)
 		}
 
 		keranjang := api.Group("/keranjang")
@@ -152,7 +153,6 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		{
 			keranjang.GET("/pelanggan/:id", keranjangController.GetAllByPelanggan)
 			keranjang.POST("/", keranjangController.Create)
-			keranjang.PUT("/:id", keranjangController.Update)
 			keranjang.PUT("/item/:id", keranjangController.UpdateItem)
 			keranjang.DELETE("/:id", keranjangController.Delete)
 			keranjang.DELETE("/item/:id", keranjangController.DeleteItem)

@@ -4,8 +4,10 @@ import (
 	"e-commerce-go/external/raja_ongkir"
 	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
+	"e-commerce-go/pkg"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -236,7 +238,13 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
 		return errors.New("layanan ongkir tidak ditemukan")
 	}
 
-	pendingTime := time.Now().Add(time.Hour * 24)
+	expiredTime, err := strconv.ParseInt(pkg.GetEnv("PENDING_TIME_MIDTRANS", "24"), 10, 64)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	pendingTime := time.Now().Add(time.Hour * time.Duration(expiredTime))
 	
 	transaksi := models.Transaksi{
 		ID:                uuid.New(),
@@ -251,7 +259,7 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
 		GrandTotal:        data.GrandTotal + float64(layananOngkir.Harga),
 		Notes:             note,
 		Status:            "Pending",
-		PendingSampai: 		&pendingTime,
+		ExpiredAt: 		   &pendingTime,
 	}
 
 	if err := tx.Create(&transaksi).Error; err != nil {
@@ -296,5 +304,33 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
 }
 
 func (m *transaksiRepo) UpdateStatus(id string, status string) error {
-	return m.db.Model(&models.Transaksi{}).Where("id = ?", id).Update("status", status).Error
+	var data models.Transaksi
+	err := m.db.First(&data, "id = ?", id).Error
+	if err != nil {
+		return err
+	}
+	waktuUpdate := time.Now()
+
+	switch status {
+		case "Expired":
+			data.ExpiredAt = &waktuUpdate
+		case "Paid":
+			data.ExpiredAt = nil
+			data.PaidAt = &waktuUpdate
+		case "Complete":
+			data.ExpiredAt = nil
+			data.CompleteAt = &waktuUpdate
+		case "Cancelled":
+			data.ExpiredAt = nil
+			data.CancelledAt = &waktuUpdate
+	}
+
+	updateData := map[string]any{
+		"expired_at": &data.ExpiredAt,
+		"paid_at": &data.PaidAt,
+		"complete_at": &data.CompleteAt,
+		"cancelled_at": &data.CancelledAt,
+		"status": status,
+	}
+	return m.db.Model(&models.Transaksi{}).Where("id = ?", id).Updates(&updateData).Error
 }

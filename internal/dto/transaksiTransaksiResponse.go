@@ -24,7 +24,8 @@ type TransaksiResponse struct {
 	DataItems 	[]TransaksiItemResponse `json:"data_items"`
 	DataPelanggan MasterPelangganPreload `json:"data_pelanggan"`
 	DataAlamat   MasterAlamatPelangganResponse `json:"data_alamat"`
-	PendingSampai *time.Time `json:"pending_sampai"`
+	CancelledAt *time.Time `json:"cancelled_at"`
+	ExpiredAt 	*time.Time `json:"expired_at"`
 	PaidAt  	*time.Time `json:"paid_at"`
 	CompleteAt  *time.Time  `json:"complete_at"`
 	CreatedAt 	time.Time `json:"created_at"`
@@ -48,4 +49,10 @@ type PilihanOngkirResponse struct {
 	NamaLayanan string `json:"nama_layanan"`
 	Estimasi    string `json:"estimasi"`
 	Harga       int    `json:"harga"`
+}
+
+type PaymentResponse struct {
+	IDTransaksi uuid.UUID `json:"id_transaksi"`
+	PaymentLink string `json:"payment_link"`
+	PaymentToken string `json:"payment_token"`
 }
