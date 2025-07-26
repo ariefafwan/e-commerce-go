@@ -6,6 +6,7 @@ import (
 	"e-commerce-go/internal/models"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
@@ -15,10 +16,9 @@ import (
 type TransaksiRepository interface {
 	GetAll(q QueryParams) ([]dto.TransaksiResponse, int64, error)
 	GetAllByPelanggan(id_pelanggan string, q QueryParams) ([]dto.TransaksiResponse, int64, error)
-	KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan *string) (*dto.TransaksiResponse, error)
+	KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan string) (*dto.TransaksiResponse, error)
 	GetByID(id string) (*dto.TransaksiResponse, error)
-	Create(transaksi *models.Transaksi) error
-	Update(transaksi *models.Transaksi) error
+	Create(items []string, id_alamat string, layanan string, note *string) error
 	UpdateStatus(id string, status string) error
 }
 
@@ -39,7 +39,7 @@ func (m *transaksiRepo) GetAll(q QueryParams) ([]dto.TransaksiResponse, int64, e
 		q.Sort = "asc"
 	}
 
-	query := m.db.Model(&models.Transaksi{}).Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems")
+	query := m.db.Model(&models.Transaksi{}).Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
 
 	if q.Search != "" {
 		query = query.Where("id_pelanggan IN (?)",
@@ -68,7 +68,7 @@ func (m *transaksiRepo) GetAll(q QueryParams) ([]dto.TransaksiResponse, int64, e
 	return response, total, err
 }
 
-func (m *transaksiRepo) GetAllByPelanggan(id_pelanggan string,q QueryParams) ([]dto.TransaksiResponse, int64, error) {
+func (m *transaksiRepo) GetAllByPelanggan(id_pelanggan string, q QueryParams) ([]dto.TransaksiResponse, int64, error) {
 	var data []models.Transaksi
 	var total int64
 	offset := (q.Page - 1) * q.Limit
@@ -77,7 +77,7 @@ func (m *transaksiRepo) GetAllByPelanggan(id_pelanggan string,q QueryParams) ([]
 		q.Sort = "asc"
 	}
 
-	query := m.db.Model(&models.Transaksi{}).Where("id_pelanggan = ?", id_pelanggan).Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems")
+	query := m.db.Model(&models.Transaksi{}).Where("id_pelanggan = ?", id_pelanggan).Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -102,7 +102,7 @@ func (m *transaksiRepo) GetAllByPelanggan(id_pelanggan string,q QueryParams) ([]
 
 func (m *transaksiRepo) GetByID(id string) (*dto.TransaksiResponse, error) {
 	var data models.Transaksi
-	err := m.db.Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems").First(&data, "id = ?", id).Error
+	err := m.db.Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&data, "id = ?", id).Error
 
 	var response dto.TransaksiResponse
 	if err := copier.Copy(&response, &data); err != nil {
@@ -111,7 +111,7 @@ func (m *transaksiRepo) GetByID(id string) (*dto.TransaksiResponse, error) {
 	return &response, err
 }
 
-func (r *transaksiRepo) KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan *string) (*dto.TransaksiResponse, error) {
+func (r *transaksiRepo) KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan string) (*dto.TransaksiResponse, error) {
 	if len(itemIDs) == 0 {
 		return nil, errors.New("tidak ada item yang dipilih untuk memulai transaksi")
 	}
@@ -161,14 +161,8 @@ func (r *transaksiRepo) KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan *
 	pajak := totalHarga * (toko.AturanPajak / 100.0)
 
 	var alamat models.MasterAlamatPelanggan
-	if idAlamatPelanggan != nil {
-		if err := r.db.Preload("DataKecamatan.DataKota.DataProvinsi").First(&alamat, "id = ? AND id_pelanggan = ?", idAlamatPelanggan, idPelanggan).Error; err != nil {
-			return nil, errors.New("alamat pelanggan yang dipilih tidak ditemukan atau bukan milik pelanggan ini")
-		}
-	} else {
-		if err := r.db.Preload("DataKecamatan.DataKota.DataProvinsi").Where("is_default = ?", true).First(&alamat, "id_pelanggan = ?", idPelanggan).Error; err != nil {
-			return nil, errors.New("alamat pelanggan yang dipilih tidak ditemukan atau bukan milik pelanggan ini")
-		}
+	if err := r.db.Preload("DataKecamatan.DataKota.DataProvinsi").First(&alamat, "id = ? AND id_pelanggan = ?", idAlamatPelanggan, idPelanggan).Error; err != nil {
+		return nil, errors.New("alamat pelanggan yang dipilih tidak ditemukan atau bukan milik pelanggan ini")
 	}
 
 	var pilihanOngkir []dto.PilihanOngkirResponse
@@ -213,12 +207,92 @@ func (r *transaksiRepo) KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan *
 	return response, nil
 }
 
-func (m *transaksiRepo) Create(transaksi *models.Transaksi) error {
-	return m.db.Create(transaksi).Error
+func findTrueLayanan(layanan string, pilihanOngkir *[]dto.PilihanOngkirResponse) *dto.PilihanOngkirResponse {
+	for _, opsi := range *pilihanOngkir {
+		if opsi.NamaLayanan == layanan {
+			return &opsi
+		}
+	}
+	return nil
 }
 
-func (m *transaksiRepo) Update(transaksi *models.Transaksi) error {
-	return m.db.Model(&models.Transaksi{}).Where("id = ?", transaksi.ID).Updates(transaksi).Error
+func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string, note *string) error {
+	tx := m.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	data, err := m.KalkulasiTransaksi(items, id_alamat)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	layananOngkir := findTrueLayanan(layanan, data.PilihanOngkir)
+	if layananOngkir == nil {
+		tx.Rollback()
+		return errors.New("layanan ongkir tidak ditemukan")
+	}
+
+	pendingTime := time.Now().Add(time.Hour * 24)
+	
+	transaksi := models.Transaksi{
+		ID:                uuid.New(),
+		IDPelanggan:       data.IDPelanggan,
+		IDAlamatPelanggan: data.IDAlamatPelanggan,
+		NoInvoice:         fmt.Sprintf("INV-%d-%s", time.Now().Unix(), data.DataPelanggan.NamaPanggilan),
+		TotalHarga:        data.TotalHarga,
+		TotalOngkir:       float64(layananOngkir.Harga),
+		JumlahItem:        data.JumlahItem,
+		BeratTotal:        data.BeratTotal,
+		Pajak:             data.Pajak,
+		GrandTotal:        data.GrandTotal + float64(layananOngkir.Harga),
+		Notes:             note,
+		Status:            "Pending",
+		PendingSampai: 		&pendingTime,
+	}
+
+	if err := tx.Create(&transaksi).Error; err != nil {
+		tx.Rollback()
+		return errors.New("failed to create transaksi")
+	}
+
+	for _, item := range data.DataItems {
+		itemdata := &models.TransaksiItem{
+			IDTransaksi: transaksi.ID,
+			IDProduk:    item.IDProduk,
+			IDVariantProduk: item.IDVariantProduk,
+			Harga:       item.DataVariant.Harga,
+			Quantity:    item.Quantity,
+			Subtotal:    item.Subtotal,
+		}
+		if err := tx.Create(&itemdata).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	if err := tx.Where("id IN ?", items).Delete(&models.TransaksiKeranjangItem{}).Error; err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    var count int64
+    if err := tx.Model(&models.TransaksiKeranjangItem{}).Preload("DataKeranjang", "DataKeranjang.id_pelanggan = ?", transaksi.IDPelanggan).Count(&count).Error; err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    if count == 0 {
+        if err := tx.Delete(&models.TransaksiKeranjang{}, "id_pelanggan = ?", transaksi.IDPelanggan).Error; err != nil {
+            tx.Rollback()
+            return err
+        }
+    }
+
+	return tx.Commit().Error
 }
 
 func (m *transaksiRepo) UpdateStatus(id string, status string) error {

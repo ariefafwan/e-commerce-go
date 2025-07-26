@@ -18,6 +18,7 @@ const (
     NonAktif 	StatusProduk = "Non Aktif"
 )
 
+// scan dan value ini untuk type enum, dokumentasi : https://stackoverflow.com/questions/68637265/how-can-i-add-enum-in-gorm
 func (ct *StatusProduk) Scan(value any) error {
     s, ok := value.(string)
     if !ok {

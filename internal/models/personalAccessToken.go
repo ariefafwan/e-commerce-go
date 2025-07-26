@@ -17,6 +17,7 @@ const (
     RefreshToken 	TipeToken = "refresh-token"
 )
 
+// scan dan value ini untuk type enum, dokumentasi : https://stackoverflow.com/questions/68637265/how-can-i-add-enum-in-gorm
 func (ct *TipeToken) Scan(value interface{}) error {
     s, ok := value.(string)
     if !ok {

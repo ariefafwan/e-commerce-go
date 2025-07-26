@@ -11,6 +11,7 @@ type TransaksiResponse struct {
 	ID 			uuid.UUID `json:"id"`
 	IDPelanggan uuid.UUID `json:"id_pelanggan"`
 	IDAlamatPelanggan uuid.UUID `json:"id_alamat_pelanggan"`
+	NoInvoice 	*string `json:"no_invoice"`
 	TotalHarga 	float64 `json:"total_harga"`
 	TotalOngkir float64 `json:"total_ongkir"`
 	JumlahItem 	int16 `json:"jumlah_item"`
@@ -23,8 +24,9 @@ type TransaksiResponse struct {
 	DataItems 	[]TransaksiItemResponse `json:"data_items"`
 	DataPelanggan MasterPelangganPreload `json:"data_pelanggan"`
 	DataAlamat   MasterAlamatPelangganResponse `json:"data_alamat"`
-	PaidAt  	*time.Time
-	CompleteAt  *time.Time
+	PendingSampai *time.Time `json:"pending_sampai"`
+	PaidAt  	*time.Time `json:"paid_at"`
+	CompleteAt  *time.Time  `json:"complete_at"`
 	CreatedAt 	time.Time `json:"created_at"`
 	UpdatedAt 	time.Time `json:"updated_at"`
 }

@@ -10,8 +10,6 @@ import (
 
 type TransaksiItemRepository interface {
 	GetAll(id_transaksi string) ([]dto.TransaksiItemResponse, error)
-	Update(item *models.TransaksiItem) error
-	Delete(id string) error
 }
 
 type transaksiItemRepo struct {
@@ -31,12 +29,4 @@ func (m *transaksiItemRepo) GetAll(id_transaksi string) ([]dto.TransaksiItemResp
 		return nil, err
 	}
 	return response, err
-}
-
-func (m *transaksiItemRepo) Update(item *models.TransaksiItem) error {
-	return m.db.Model(&models.TransaksiItem{}).Where("id = ?", item.ID).Updates(item).Error
-}
-
-func (m *transaksiItemRepo) Delete(id string) error {
-	return m.db.Delete(&models.TransaksiItem{}, "id = ?", id).Error
 }

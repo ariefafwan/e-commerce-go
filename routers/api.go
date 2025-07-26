@@ -167,12 +167,9 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		{
 			transaksi.GET("/pelanggan/:id", transaksiController.GetAllByPelanggan)
 			transaksi.GET("/:id", transaksiController.GetByID)
-			// transaksi.POST("/", transaksiController.Create)
-			// transaksi.PUT("/:id", transaksiController.Update)
+			transaksi.POST("/", transaksiController.Create)
 			transaksi.GET("/item/:id", transaksiController.GetAllItem)
-			// transaksi.DELETE("/:id", transaksiController.Delete)
-			// transaksi.DELETE("/item/:id", transaksiController.DeleteItem)
-			// transaksi.PUT("/status/:id", transaksiController.UpdateStatus)
+			transaksi.PUT("/status/:id", transaksiController.UpdateStatus)
 			transaksi.POST("/kalkulasi", transaksiController.KalkulasiTransaksi)
 		}
 

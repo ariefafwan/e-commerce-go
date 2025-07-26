@@ -18,6 +18,8 @@ const (
 	Complete 	StatusTransaksi = "Complete"
 )
 
+
+// scan dan value ini untuk type enum, dokumentasi : https://stackoverflow.com/questions/68637265/how-can-i-add-enum-in-gorm
 func (ct *StatusTransaksi) Scan(value interface{}) error {
     s, ok := value.(string)
     if !ok {
@@ -51,8 +53,9 @@ type Transaksi struct {
 	BeratTotal 		   float64	 `gorm:"type:float;not null;"`
 	Pajak              float64	 `gorm:"type:float;not null;"`
 	GrandTotal         float64	 `gorm:"type:float;not null;"`
-	Notes              *string	 `gorm:"type:text;not null;"`
+	Notes              *string	 `gorm:"type:text;"`
 	Status             StatusTransaksi 	`gorm:"type:varchar(255);not null;default:Pending"`
+	PendingSampai      *time.Time
 	PaidAt     		   *time.Time
 	CompleteAt         *time.Time
 	CreatedAt          time.Time

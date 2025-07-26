@@ -95,7 +95,7 @@ func init() {
 			return true
 		}
 		
-		_, err := time.Parse("02-01-2006", dateStr)
+		_, err := time.Parse("2006-01-02", dateStr)
 		return err == nil
 	})
 }
@@ -123,7 +123,7 @@ func ValidateStruct(data interface{}) map[string]string {
 		case "unique_except":
 			errors[field] = field + " sudah digunakan"
 		case "date_format":
-			errors[field] = field + " harus berformat DD-MM-YYYY (contoh: 27-09-2025)"
+			errors[field] = field + " harus berformat DD-MM-YYYY (contoh: 2020-01-01)"
 		default:
 			errors[field] = "Field " + strings.ToLower(field) + " tidak valid"
 		}

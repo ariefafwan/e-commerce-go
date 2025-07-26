@@ -44,6 +44,9 @@ func AuthMiddleware(roles ...any) gin.HandlerFunc {
 			return 
 		}
 
+		// engga di cek ke tabel personal acces token untuk mempermudah query aja, 
+		// karna expired nya untuk acces-token sama dengan yang ada di jtw
+
 		userRole, _ := pat.Role.Value()
 		for _, r := range roles {
 			if r == userRole {

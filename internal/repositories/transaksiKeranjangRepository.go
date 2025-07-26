@@ -68,7 +68,17 @@ func (t *transaksiKeranjangRepo) GetAll(q QueryParams) ([]dto.TransaksiKeranjang
 
 func (t *transaksiKeranjangRepo) GetAllByPelanggan(id_pelanggan string) ([]dto.TransaksiKeranjangResponse, error) {
 	var keranjangs []models.TransaksiKeranjang
-	err := t.db.Preload("DataPelanggan").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").Where("id_pelanggan = ?", id_pelanggan).Find(&keranjangs).Error
+	var count int64
+	err := t.db.Model(&models.MasterPelanggan{}).Where("id = ?", id_pelanggan).Count(&count).Error
+	if err != nil {
+		return nil, err
+	}
+
+	if count == 0 {
+		return nil, errors.New("pelanggan tidak ditemukan")
+	}
+
+	err = t.db.Preload("DataPelanggan").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").Where("id_pelanggan = ?", id_pelanggan).Find(&keranjangs).Error
 	if err != nil {
 		return nil, err
 	}
@@ -161,5 +171,22 @@ func (t *transaksiKeranjangRepo) Update(keranjang *models.TransaksiKeranjang) er
 }
 
 func (t *transaksiKeranjangRepo) Delete(id string) error {
-	return t.db.Delete(&models.TransaksiKeranjang{}, "id = ?", id).Error
+	tx := t.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Model(&models.TransaksiKeranjangItem{}).Where("id_keranjang = ?", id).Delete(&models.TransaksiKeranjangItem{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	
+	err := tx.Delete(&models.TransaksiKeranjang{}, "id = ?", id).Error
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
 }

@@ -16,6 +16,7 @@ const (
     Admin 		 RoleUser = "Admin"
 )
 
+// scan dan value ini untuk type enum, dokumentasi : https://stackoverflow.com/questions/68637265/how-can-i-add-enum-in-gorm
 func (ct *RoleUser) Scan(value interface{}) error {
     s, ok := value.(string)
     if !ok {
@@ -27,10 +28,9 @@ func (ct *RoleUser) Scan(value interface{}) error {
     }
     switch RoleUser(s) {
 		case Pelanggan, Admin:
-			*ct = RoleUser(s) // Jika valid, tetapkan nilainya
+			*ct = RoleUser(s)
 			return nil
 		default:
-			// Jika tidak valid, kembalikan error
 			return fmt.Errorf("nilai RoleUser tidak valid: %s", s)
     }
 }

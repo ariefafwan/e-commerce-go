@@ -57,45 +57,56 @@ type UpdateKategoriProdukRequest struct {
 }
 
 type ProdukRequest struct {
-	Nama      	string					`form:"nama" validate:"required,min=2,max=100"`
-	Thumbnail 	*multipart.FileHeader 	`form:"thumbnail"`
-	MinHarga  	float64					`form:"min_harga" validate:"required"`
-	MaxHarga  	float64					`form:"max_harga" validate:"required"`
-	Deskripsi 	string					`form:"deskripsi" validate:"required"`
-	Status    	*models.StatusProduk	`form:"status"`
-	Berat     	float64					`form:"berat" validate:"required"`
-	IDKategoriProduk []string			`form:"id_kategori_produk" validate:"required"`
+	Nama      	string						`form:"nama" validate:"required,min=2,max=100"`
+	Thumbnail 	*multipart.FileHeader 		`form:"thumbnail"`
+	MinHarga  	float64						`form:"min_harga" validate:"required"`
+	MaxHarga  	float64						`form:"max_harga" validate:"required"`
+	Deskripsi 	string						`form:"deskripsi" validate:"required"`
+	Status    	*models.StatusProduk		`form:"status"`
+	Berat     	float64						`form:"berat" validate:"required"`
+	IDKategoriProduk []string				`form:"id_kategori_produk" validate:"required"`
 }
 
 type ProdukVariantRequest struct {
-	NamaVariant string					`form:"nama_variant" validate:"required,min=2,max=100"`
-	Harga 		float64					`form:"harga" validate:"required"`
-	Stok 		int						`form:"stok" validate:"required"`
+	NamaVariant string						`form:"nama_variant" validate:"required,min=2,max=100"`
+	Harga 		float64						`form:"harga" validate:"required"`
+	Stok 		int							`form:"stok" validate:"required"`
 }
 
 type ProdukGaleriRequest struct {
-	Gambar 		*multipart.FileHeader 	`form:"gambar" validate:"required"`
-	Urutan 		*uint8					`form:"urutan" validate:"omitempty,unique_except=master_produk_galeri:urutan:id"`
+	Gambar 		*multipart.FileHeader 		`form:"gambar" validate:"required"`
+	Urutan 		*uint8						`form:"urutan" validate:"omitempty,unique_except=master_produk_galeri:urutan:id"`
 }
 
 type UpdateKeranjangRequest struct {
-	IDPelanggan  	string  			`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
-	BerlakuSampai   *string 			`form:"berlaku_sampai" validate:"required,date_format,future_date"`
+	IDPelanggan  	string  				`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
+	BerlakuSampai   *string 				`form:"berlaku_sampai" validate:"required,date_format"`
 }
 
 type CreateKeranjangItemRequest struct {
-	IDPelanggan  	string  			`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
-	IDVariantProduk string  			`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
-	Quantity     	int					`form:"quantity" validate:"required,min=1"`
+	IDPelanggan  	string  				`form:"id_pelanggan" validate:"required,fk_exists=master_pelanggan:id"`
+	IDVariantProduk string  				`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
+	Quantity     	int						`form:"quantity" validate:"required,min=1"`
 }
 
 type UpdateKeranjangItemRequest struct {
-	IDKeranjang  	string  			`form:"id_keranjang" validate:"required,fk_exists=transaksi_keranjang:id"`
-	IDVariantProduk string  			`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
-	Quantity     	int					`form:"quantity" validate:"required,min=1"`
+	IDKeranjang  	string  				`form:"id_keranjang" validate:"required,fk_exists=transaksi_keranjang:id"`
+	IDVariantProduk string  				`form:"id_variant_produk" validate:"required,fk_exists=master_produk_variant:id"`
+	Quantity     	int						`form:"quantity" validate:"required,min=1"`
 }
 
 type KalkulasiTransaksiRequest struct {
-	IDItems 				[]string  			`form:"id_items" validate:"required"`
-	IDAlamatPelanggan 		*string  			`form:"id_alamat_pelanggan" validate:"omitempty,fk_exists=master_alamat_pelanggan:id"`
+	IDItems 				[]string  		`form:"id_items" validate:"required"`
+	IDAlamatPelanggan 		string  		`form:"id_alamat_pelanggan" validate:"omitempty,fk_exists=master_alamat_pelanggan:id"`
+}
+
+type CreateTransaksiRequest struct {
+	IDAlamatPelanggan 	string  			`form:"id_alamat_pelanggan" validate:"required,fk_exists=master_alamat_pelanggan:id"`
+	Layanan 			string				`form:"layanan" validate:"required"`
+	Notes 				*string				`form:"notes"`
+	IDItems 			[]string 			`form:"id_items" validate:"required"`
+}
+
+type UpdateStatusTransaksiRequest struct {
+	Status 			string					`form:"status" validate:"required"`
 }

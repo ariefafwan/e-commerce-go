@@ -10,7 +10,7 @@ var Cloud *cloudinary.Cloudinary
 
 func InitCloudinary() {
 	cld, err := cloudinary.NewFromParams(
-		GetEnv("CLOUDINARY_CLOUD_NAME", "sanbercode"),
+		GetEnv("CLOUDINARY_CLOUD_NAME", "cloud"),
 		GetEnv("CLOUDINARY_API_KEY", "123456789"),
 		GetEnv("CLOUDINARY_API_SECRET", "123456789"),
 	)

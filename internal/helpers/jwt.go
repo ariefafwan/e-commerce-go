@@ -1,12 +1,13 @@
 package helpers
 
 import (
+	"e-commerce-go/pkg"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("9Cio8wwkiAaGFMAvf62Ahq7UnNDY0NeaLGktqy3TD06iMOll4eJFfadfv37PjCQv")
+var jwtKey = []byte(pkg.GetEnv("JWT_KEY", "secret"))
 
 type JWTClaims struct {
 	UserID string `json:"user_id"`

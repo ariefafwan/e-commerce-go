@@ -108,3 +108,46 @@ func (t *TransaksiController) KalkulasiTransaksi(c *gin.Context) {
 
 	helpers.Success(c, http.StatusOK, data, "Success")
 }
+
+func (t *TransaksiController) Create(c *gin.Context) {
+	var req request.CreateTransaksiRequest
+	if err := c.ShouldBind(&req); err != nil {
+		helpers.Error(c, http.StatusBadRequest, err.Error(), "Input tidak valid")
+		return
+	}
+
+	if errors := request.ValidateStruct(req); errors != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, errors, "Validasi gagal")
+		return
+	}
+
+	err := t.RepoTransaksi.Create(req.IDItems, req.IDAlamatPelanggan, req.Layanan, req.Notes)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Failed")
+		return
+	}
+
+	helpers.Success(c, http.StatusOK, nil, "Success")
+}
+
+func (t *TransaksiController) UpdateStatus(c *gin.Context) {
+	id_transaksi := c.Param("id")
+	var req request.UpdateStatusTransaksiRequest
+	if err := c.ShouldBind(&req); err != nil {
+		helpers.Error(c, http.StatusBadRequest, err.Error(), "Input tidak valid")
+		return
+	}
+
+	if errors := request.ValidateStruct(req); errors != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, errors, "Validasi gagal")
+		return
+	}
+
+	err := t.RepoTransaksi.UpdateStatus(id_transaksi, req.Status)
+	if err != nil {
+		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Failed")
+		return
+	}
+
+	helpers.Success(c, http.StatusOK, nil, "Success")
+}

@@ -8,10 +8,10 @@ import (
 )
 
 type TransaksiItem struct {
-	ID        		uuid.UUID `gorm:"type:uuid;primaryKey"`
-	IDTransaksi     uuid.UUID `gorm:"type:uuid;not null;"`
-	IDProduk        uuid.UUID `gorm:"type:uuid;not null;"`
-	IDVariantProduk uuid.UUID `gorm:"type:uuid;not null;"`
+	ID        		uuid.UUID 	`gorm:"type:uuid;primaryKey"`
+	IDTransaksi     uuid.UUID 	`gorm:"type:uuid;not null;"`
+	IDProduk        uuid.UUID 	`gorm:"type:uuid;not null;"`
+	IDVariantProduk uuid.UUID 	`gorm:"type:uuid;not null;"`
 	Harga           float64		`gorm:"type:float;not null;"`
 	Quantity        int			`gorm:"type:int;not null;"`
 	Subtotal        float64		`gorm:"type:float;not null;"`

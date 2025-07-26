@@ -22,10 +22,10 @@ type MasterAlamatPelanggan struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 
-	DataProvinsi  MasterProvinsi `gorm:"foreignKey:IDProvinsi;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	DataKota      MasterKota `gorm:"foreignKey:IDKota;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	DataKecamatan MasterKecamatan `gorm:"foreignKey:IDKecamatan;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	DataPelanggan MasterPelanggan `gorm:"foreignKey:IDPelanggan;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataProvinsi  MasterProvinsi 	`gorm:"foreignKey:IDProvinsi;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataKota      MasterKota 		`gorm:"foreignKey:IDKota;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataKecamatan MasterKecamatan 	`gorm:"foreignKey:IDKecamatan;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	DataPelanggan MasterPelanggan 	`gorm:"foreignKey:IDPelanggan;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (MasterAlamatPelanggan) TableName() string {
