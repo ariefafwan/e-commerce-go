@@ -20,14 +20,21 @@ type TransaksiResponse struct {
 	GrandTotal 	float64 `json:"grand_total"`
 	Notes 		*string `json:"notes"`
 	Status 		models.StatusTransaksi `json:"status"`
+	
+	PaymentToken      *string    `json:"payment_token,omitempty"`
+	PaymentURL        *string    `json:"payment_url,omitempty"`
+	PaymentType       *string    `json:"payment_type,omitempty"`
+
 	PilihanOngkir *[]PilihanOngkirResponse `json:"pilihan_ongkir"`
 	DataItems 	[]TransaksiItemResponse `json:"data_items"`
 	DataPelanggan MasterPelangganPreload `json:"data_pelanggan"`
 	DataAlamat   MasterAlamatPelangganResponse `json:"data_alamat"`
+
 	CancelledAt *time.Time `json:"cancelled_at"`
 	ExpiredAt 	*time.Time `json:"expired_at"`
 	PaidAt  	*time.Time `json:"paid_at"`
 	CompleteAt  *time.Time  `json:"complete_at"`
+	
 	CreatedAt 	time.Time `json:"created_at"`
 	UpdatedAt 	time.Time `json:"updated_at"`
 }
@@ -52,7 +59,7 @@ type PilihanOngkirResponse struct {
 }
 
 type PaymentResponse struct {
-	IDTransaksi uuid.UUID `json:"id_transaksi"`
-	PaymentLink string `json:"payment_link"`
+	IDTransaksi  string `json:"id_transaksi"`
 	PaymentToken string `json:"payment_token"`
+	PaymentURL   string `json:"payment_url"`
 }

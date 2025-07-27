@@ -57,6 +57,8 @@ type Transaksi struct {
 	GrandTotal         float64	 `gorm:"type:float;not null;"`
 	Notes              *string	 `gorm:"type:text;"`
 	Status             StatusTransaksi 	`gorm:"type:varchar(255);not null;default:Pending"`
+	PaymentToken       *string	 `gorm:"type:varchar(255);"`
+	PaymentURL         *string	 `gorm:"type:varchar(255);"`
 	ExpiredAt          *time.Time
 	CancelledAt        *time.Time
 	PaidAt     		   *time.Time

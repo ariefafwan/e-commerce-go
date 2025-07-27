@@ -121,13 +121,13 @@ func (t *TransaksiController) Create(c *gin.Context) {
 		return
 	}
 
-	err := t.RepoTransaksi.Create(req.IDItems, req.IDAlamatPelanggan, req.Layanan, req.Notes)
+	paymentResponse, err := t.RepoTransaksi.Create(req.IDItems, req.IDAlamatPelanggan, req.Layanan, req.Notes)
 	if err != nil {
 		helpers.Error(c, http.StatusUnprocessableEntity, err.Error(), "Failed")
 		return
 	}
 
-	helpers.Success(c, http.StatusOK, nil, "Success")
+	helpers.Success(c, http.StatusOK, paymentResponse, "Transaksi berhasil dibuat. Silakan lakukan pembayaran pada link yang tersedia.")
 }
 
 func (t *TransaksiController) UpdateStatus(c *gin.Context) {
@@ -150,4 +150,42 @@ func (t *TransaksiController) UpdateStatus(c *gin.Context) {
 	}
 
 	helpers.Success(c, http.StatusOK, nil, "Success")
+}
+
+func (t *TransaksiController) MidtransCallback(c *gin.Context) {
+	var callbackData struct {
+		OrderID           string `json:"order_id"`
+		TransactionStatus string `json:"transaction_status"`
+		FraudStatus       string `json:"fraud_status"`
+		StatusCode        string `json:"status_code"`
+		GrossAmount       string `json:"gross_amount"`
+		PaymentType       string `json:"payment_type"`
+		TransactionTime   string `json:"transaction_time"`
+		SignatureKey      string `json:"signature_key"`
+	}
+
+	if err := c.ShouldBindJSON(&callbackData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"status": "error"})
+		return
+	}
+
+	if !helpers.VerifySignatureMidtrans(callbackData.OrderID,
+		callbackData.StatusCode, callbackData.GrossAmount, callbackData.SignatureKey) {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error"})
+		return
+	}
+
+	// callback
+	err := t.RepoTransaksi.HandlePaymentCallback(
+		callbackData.OrderID,
+		callbackData.TransactionStatus,
+		callbackData.FraudStatus,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"status": "error"})
+		return
+	}
+
+	// semua response di serderhanakan karena untuk midtrans
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }

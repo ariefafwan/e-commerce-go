@@ -1,9 +1,12 @@
 package helpers
 
 import (
+	"crypto/sha512"
 	"e-commerce-go/external/cloudinary"
 	"e-commerce-go/internal/repositories"
+	"e-commerce-go/pkg"
 	"errors"
+	"fmt"
 	"log"
 	"mime/multipart"
 	"strconv"
@@ -57,4 +60,16 @@ func ParseQueryParams(c *gin.Context) repositories.QueryParams {
 		Search: search,
 		Sort:   sort,
 	}
+}
+
+func VerifySignatureMidtrans(orderID, statusCode, grossAmount, signatureKey string) bool {
+	// Format: order_id+status_code+gross_amount+server_key
+	serverKey := pkg.GetEnv("MIDTRANS_SERVER_KEY", "")
+	payload := orderID + statusCode + grossAmount + serverKey
+	
+	// Hash dengan SHA512
+	hash := sha512.Sum512([]byte(payload))
+	expectedSignature := fmt.Sprintf("%x", hash)
+	
+	return expectedSignature == signatureKey
 }

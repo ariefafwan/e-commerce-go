@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"e-commerce-go/external/midtrans"
+	midtransService "e-commerce-go/external/midtrans"
 	"e-commerce-go/external/raja_ongkir"
 	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
@@ -20,7 +22,9 @@ type TransaksiRepository interface {
 	GetAllByPelanggan(id_pelanggan string, q QueryParams) ([]dto.TransaksiResponse, int64, error)
 	KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan string) (*dto.TransaksiResponse, error)
 	GetByID(id string) (*dto.TransaksiResponse, error)
-	Create(items []string, id_alamat string, layanan string, note *string) error
+	GetByInvoice(invoice string) (*dto.TransaksiResponse, error)
+	Create(items []string, id_alamat string, layanan string, note *string) (*dto.PaymentResponse, error)
+	HandlePaymentCallback(orderID string, transactionStatus string, fraudStatus string) error
 	UpdateStatus(id string, status string) error
 }
 
@@ -113,6 +117,17 @@ func (m *transaksiRepo) GetByID(id string) (*dto.TransaksiResponse, error) {
 	return &response, err
 }
 
+func (m *transaksiRepo) GetByInvoice(invoice string) (*dto.TransaksiResponse, error) {
+	var data models.Transaksi
+	err := m.db.Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&data, "no_invoice = ?", invoice).Error
+
+	var response dto.TransaksiResponse
+	if err := copier.Copy(&response, &data); err != nil {
+		return nil, err
+	}
+	return &response, err
+}
+
 func (r *transaksiRepo) KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan string) (*dto.TransaksiResponse, error) {
 	if len(itemIDs) == 0 {
 		return nil, errors.New("tidak ada item yang dipilih untuk memulai transaksi")
@@ -123,7 +138,7 @@ func (r *transaksiRepo) KalkulasiTransaksi(itemIDs []string, idAlamatPelanggan s
 
 	err := r.db.
 		Preload("DataVariant.DataProduk").
-		Preload("DataKeranjang.DataPelanggan").
+		Preload("DataKeranjang.DataPelanggan.DataUser").
 		Where("id IN ?", itemIDs).
 		Find(&items).Error
 	if err != nil {
@@ -218,7 +233,7 @@ func findTrueLayanan(layanan string, pilihanOngkir *[]dto.PilihanOngkirResponse)
 	return nil
 }
 
-func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string, note *string) error {
+func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string, note *string) (*dto.PaymentResponse, error) {
 	tx := m.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
@@ -226,26 +241,29 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
 		}
 	}()
 
+	// Kalkulasi transaksi
 	data, err := m.KalkulasiTransaksi(items, id_alamat)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
+	// Cari layanan ongkir yang dipilih
 	layananOngkir := findTrueLayanan(layanan, data.PilihanOngkir)
 	if layananOngkir == nil {
 		tx.Rollback()
-		return errors.New("layanan ongkir tidak ditemukan")
+		return nil, errors.New("layanan ongkir tidak ditemukan")
 	}
 
+	// Set expired time
 	expiredTime, err := strconv.ParseInt(pkg.GetEnv("PENDING_TIME_MIDTRANS", "24"), 10, 64)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return nil, err
 	}
-
 	pendingTime := time.Now().Add(time.Hour * time.Duration(expiredTime))
 	
+	// Create transaksi
 	transaksi := models.Transaksi{
 		ID:                uuid.New(),
 		IDPelanggan:       data.IDPelanggan,
@@ -264,9 +282,10 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
 
 	if err := tx.Create(&transaksi).Error; err != nil {
 		tx.Rollback()
-		return errors.New("failed to create transaksi")
+		return nil, errors.New("failed to create transaksi")
 	}
 
+	// Create transaksi items
 	for _, item := range data.DataItems {
 		itemdata := &models.TransaksiItem{
 			IDTransaksi: transaksi.ID,
@@ -278,29 +297,68 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
 		}
 		if err := tx.Create(&itemdata).Error; err != nil {
 			tx.Rollback()
-			return err
+			return nil, err
 		}
 	}
 
+	// Delete cart items
 	if err := tx.Where("id IN ?", items).Delete(&models.TransaksiKeranjangItem{}).Error; err != nil {
         tx.Rollback()
-        return err
+        return nil, err
     }
 
+    // Check if cart is empty, delete if so
     var count int64
     if err := tx.Model(&models.TransaksiKeranjangItem{}).Preload("DataKeranjang", "DataKeranjang.id_pelanggan = ?", transaksi.IDPelanggan).Count(&count).Error; err != nil {
         tx.Rollback()
-        return err
+        return nil, err
     }
 
     if count == 0 {
         if err := tx.Delete(&models.TransaksiKeranjang{}, "id_pelanggan = ?", transaksi.IDPelanggan).Error; err != nil {
             tx.Rollback()
-            return err
+            return nil, err
         }
     }
 
-	return tx.Commit().Error
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	// Prepare response data untuk Midtrans
+	responseData := *data
+	responseData.ID = transaksi.ID
+	responseData.NoInvoice = &transaksi.NoInvoice
+	responseData.TotalOngkir = float64(layananOngkir.Harga)
+	responseData.GrandTotal = transaksi.GrandTotal
+	responseData.Notes = note
+	responseData.PilihanOngkir = nil
+
+	// Create payment link via Midtrans
+	payment_token, payment_url, id_transaksi, err := midtransService.CreatePayment(&responseData)
+	if err != nil {
+		// Jika gagal buat payment, rollback transaksi
+		m.db.Delete(&models.Transaksi{}, "id = ?", transaksi.ID)
+		return nil, fmt.Errorf("gagal membuat payment link: %v", err)
+	}
+
+	updateData := map[string]any{
+		"payment_token": payment_token,
+		"payment_url": payment_url,
+	}
+
+	if err := m.db.Model(&models.Transaksi{}).Where("id = ?", transaksi.ID).Updates(updateData).Error; err != nil {
+		return nil, fmt.Errorf("gagal memperbarui transaksi: %v", err)
+	}
+
+	paymentResponse := &dto.PaymentResponse{
+		IDTransaksi:  id_transaksi,
+		PaymentToken: payment_token,
+		PaymentURL:   payment_url,
+	}
+
+	return paymentResponse, nil
 }
 
 func (m *transaksiRepo) UpdateStatus(id string, status string) error {
@@ -333,4 +391,21 @@ func (m *transaksiRepo) UpdateStatus(id string, status string) error {
 		"status": status,
 	}
 	return m.db.Model(&models.Transaksi{}).Where("id = ?", id).Updates(&updateData).Error
+}
+
+func (m *transaksiRepo) HandlePaymentCallback(orderID string, transactionStatus string, fraudStatus string) error {
+	// Get transaction by invoice number
+	transaksi, err := m.GetByInvoice(orderID)
+	if err != nil {
+		return fmt.Errorf("transaksi dengan invoice %s tidak ditemukan: %v", orderID, err)
+	}
+
+	// Handle status dari Midtrans
+	newStatus, err := midtrans.HandleCallback(orderID, transactionStatus, fraudStatus)
+	if err != nil {
+		return err
+	}
+
+	// Update status transaksi
+	return m.UpdateStatus(transaksi.ID.String(), newStatus)
 }

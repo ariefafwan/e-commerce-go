@@ -24,6 +24,7 @@ type MasterPelangganPreload struct {
 	NamaLengkap      string    	`json:"nama_lengkap"`
 	NamaPanggilan    string    	`json:"nama_panggilan"`
 	Phone            string    	`json:"phone"`
+	DataUser  		 UserResponse   		`json:"data_user"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
 }
