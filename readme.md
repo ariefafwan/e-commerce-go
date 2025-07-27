@@ -64,11 +64,13 @@ Edit file .env sesuai konfigurasi lokal kamu (DATABASE_URL, PORT, dll.) juga ses
 
    # scraping data
    cd scraping
+   cp ~/e-commerce-go/.env .env
    go run main.go --scraping=all
    cd ..
 
    # seed data
    cd seeders
+   cp ~/e-commerce-go/.env .env
    go run main.go --seed=all
    cd ..
 
@@ -151,10 +153,10 @@ Proyek ini open source. Lihat file [LICENSE](https://choosealicense.com/licenses
 
 ## Teuku M Arief Afwan
 
-### 📄 GitHub: @ariefafwan
+### 📄 GitHub: [@ariefafwan](https://github.com/ariefafwan/)
 
-### 👋 Instagram: @teukuafwan
+### 👋 Instagram: [@teukuafwan](https://www.instagram.com/teukuafwan/)
 
-### 🔗 Personal Website: teukuafwan.my.id
+### 🔗 Personal Website: [teukuafwan](teukuafwan.my.id)
 
 Repository ini juga live di [e-commerce-app](https://ws-ecommerce-go.teukuafwan.my.id/)
