@@ -84,18 +84,18 @@ Go akan berjalan di port sesuai env anda
 
 3. Example Endpoints
 
-| Method | Endpoint                     | Deskripsi                             |
-| ------ | ---------------------------- | ------------------------------------- |
-| POST   | /api/register                | Registrasi akun baru pengguna         |
-| POST   | /api/login                   | Login dan mendapatkan JWT             |
-| POST   | /api/refresh                 | Refresh Token Anda                    |
-| POST   | /api/logout                  | Logout dan revoke semua token user    |
-| GET    | /api/master-pelanggan/       | Mendapatkan semua pelanggan           |
-| GET    | /api/master-kategori-produk/ | Mendapatkan semua produk              |
-| POST   | /api/master-produk           | Menambah produk baru                  |
-| POST   | /api/keranjang               | Menambahkan item ke dalam keranjang   |
-| POST   | /api/transaksi/kalkulasi/    | Menghitung total yang akan di chekout |
-| DELETE | /api/transaksi/              | Membuat transaksi baru dari kalkulasi |
+| Method | Endpoint                     | Deskripsi                                                                          |
+| ------ | ---------------------------- | ---------------------------------------------------------------------------------  |
+| POST   | /api/register                | Registrasi akun baru pengguna                                                      |
+| POST   | /api/login                   | Login dan mendapatkan JWT                                                          |
+| POST   | /api/refresh                 | Refresh Token Anda                                                                 |
+| POST   | /api/logout                  | Logout dan revoke semua token user                                                 |
+| GET    | /api/master-pelanggan/       | Mendapatkan semua pelanggan                                                        |
+| GET    | /api/master-kategori-produk/ | Mendapatkan semua produk                                                           |
+| POST   | /api/master-produk           | Menambah produk baru                                                               |
+| POST   | /api/keranjang               | Menambahkan item ke dalam keranjang                                                |
+| POST   | /api/transaksi/kalkulasi/    | Menghitung total yang akan di chekout                                              |
+| DELETE | /api/transaksi/              | Membuat transaksi baru dari kalkulasi yang juga return payment link dari midtrans  |
 
 Dokumentasi Endpoint ada di : [POSTMAN](https://documenter.getpostman.com/view/26198524/2sB3B7MYf2)
 
