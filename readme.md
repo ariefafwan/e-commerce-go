@@ -1,6 +1,6 @@
 # 🛒 E-Commerce-Go
 
-E-Commerce-Go adalah aplikasi backend untuk platform e-commerce yang dibangun menggunakan bahasa pemrograman **Golang**. Aplikasi ini mencakup fitur seperti autentikasi pengguna, manajemen toko (up to multimerchant),manajemen produk & pelanggan, pemrosesan pesanan, serta integrasi beberapa sumber eksternal. Proyek ini dibuat sebagai pembelajaran dan mudah dikembangkan lebih lanjut.
+E-Commerce-Go adalah aplikasi backend untuk platform e-commerce yang dibangun menggunakan bahasa pemrograman **Golang**. Aplikasi ini mencakup fitur seperti autentikasi pengguna, manajemen toko (up to multimerchant),manajemen produk & pelanggan, pemrosesan pesanan, serta integrasi beberapa sumber eksternal seperti cloudinary, raja ongkir, juga midtrans payment gateway. Proyek ini dibuat sebagai pembelajaran dan mudah dikembangkan lebih lanjut.
 
 ---
 
@@ -18,6 +18,7 @@ E-Commerce-Go adalah aplikasi backend untuk platform e-commerce yang dibangun me
 - Middleware Token Validation
 - Filtering and Pagination
 - Raja Ongkir Integration (Shipping Cost)
+- Midtrans Payment Gateway
 
 ## 📁 Structur Project
 
