@@ -23,7 +23,6 @@ type TransaksiResponse struct {
 	
 	PaymentToken      *string    `json:"payment_token,omitempty"`
 	PaymentURL        *string    `json:"payment_url,omitempty"`
-	PaymentType       *string    `json:"payment_type,omitempty"`
 
 	PilihanOngkir *[]PilihanOngkirResponse `json:"pilihan_ongkir"`
 	DataItems 	[]TransaksiItemResponse `json:"data_items"`

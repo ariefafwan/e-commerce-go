@@ -3,16 +3,16 @@ package midtrans
 import (
 	"e-commerce-go/internal/dto"
 	"e-commerce-go/pkg"
-	"fmt"
 	"time"
 
 	"github.com/midtrans/midtrans-go"
-	"github.com/midtrans/midtrans-go/coreapi"
 	"github.com/midtrans/midtrans-go/snap"
 )
 
-var snapclient = pkg.SnapClient
-var coreapiclient = pkg.CoreApiClient
+func getSnapClient() *snap.Client {
+	return pkg.GetSnapClient()
+}
+// var recoreapiclient = pkg.CoreApiClient
 
 func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, payment_url string, id_transaksi string, error error) {
 	// Format item details
@@ -26,7 +26,7 @@ func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, paym
 		})
 	}
 
-	// Tambahkan ongkir sebagai item
+	// tambahin ongkir sebagai item
 	if transaksi.TotalOngkir > 0 {
 		itemDetails = append(itemDetails, midtrans.ItemDetails{
 			ID:    "SHIPPING",
@@ -36,7 +36,7 @@ func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, paym
 		})
 	}
 
-	// Tambahkan pajak sebagai item
+	// tambahin pajak sebagai item
 	if transaksi.Pajak > 0 {
 		itemDetails = append(itemDetails, midtrans.ItemDetails{
 			ID:    "TAX",
@@ -46,7 +46,7 @@ func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, paym
 		})
 	}
 
-	// Customer details
+	// detail pelanggan
 	customerDetails := &midtrans.CustomerDetails{
 		FName: transaksi.DataPelanggan.NamaLengkap,
 		Email: transaksi.DataPelanggan.DataUser.Email,
@@ -71,7 +71,7 @@ func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, paym
 
 	expiryDuration := int64(time.Until(*transaksi.ExpiredAt).Hours())
 
-	// Snap request
+	// set snap request
 	req := &snap.Request{
 		TransactionDetails: midtrans.TransactionDetails{
 			OrderID:  *transaksi.NoInvoice,
@@ -90,8 +90,9 @@ func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, paym
 		},
 	}
 
-	// Create snap token
-	snapResp, err := snapclient.CreateTransaction(req)
+	// bukan transaksi, untuk ambil token dan url nya
+	snapClient := getSnapClient()
+	snapResp, err := snapClient.CreateTransaction(req)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -123,13 +124,4 @@ func HandleCallback(orderID string, transactionStatus string, fraudStatus string
 	}
 
 	return status, nil
-}
-
-func GetTransactionStatus(orderID string) (*coreapi.TransactionStatusResponse, error) {
-	transactionStatusResp, err := coreapiclient.CheckTransaction(orderID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check transaction status: %v", err)
-	}
-	
-	return transactionStatusResp, nil
 }

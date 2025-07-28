@@ -22,7 +22,7 @@ func NewTransaksiItemRepository(db *gorm.DB) TransaksiItemRepository {
 
 func (m *transaksiItemRepo) GetAll(id_transaksi string) ([]dto.TransaksiItemResponse ,error) {
 	var data models.TransaksiItem
-	err := m.db.Preload("DataProduk").Preload("DataVariant").Preload("DataTransaksi.DataPelanggan").Find(&data, "id_transaksi = ?", id_transaksi).Error
+	err := m.db.Preload("DataProduk").Preload("DataVariant").Preload("DataTransaksi.DataPelanggan.DataUser").Find(&data, "id_transaksi = ?", id_transaksi).Error
 
 	var response []dto.TransaksiItemResponse
 	if err := copier.Copy(&response, &data); err != nil {

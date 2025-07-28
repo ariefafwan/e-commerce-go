@@ -76,6 +76,8 @@ func (Transaksi) TableName() string {
 }
 
 func (t *Transaksi) BeforeCreate(tx *gorm.DB) (err error) {
-	t.ID = uuid.New()
+	if t.ID == uuid.Nil {
+		t.ID = uuid.New()
+	}
 	return nil
 }

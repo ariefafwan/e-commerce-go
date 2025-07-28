@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"e-commerce-go/external/midtrans"
-	midtransService "e-commerce-go/external/midtrans"
 	"e-commerce-go/external/raja_ongkir"
 	"e-commerce-go/internal/dto"
 	"e-commerce-go/internal/models"
@@ -45,7 +44,7 @@ func (m *transaksiRepo) GetAll(q QueryParams) ([]dto.TransaksiResponse, int64, e
 		q.Sort = "asc"
 	}
 
-	query := m.db.Model(&models.Transaksi{}).Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
+	query := m.db.Model(&models.Transaksi{}).Preload("DataPelanggan.DataUser").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
 
 	if q.Search != "" {
 		query = query.Where("id_pelanggan IN (?)",
@@ -83,7 +82,7 @@ func (m *transaksiRepo) GetAllByPelanggan(id_pelanggan string, q QueryParams) ([
 		q.Sort = "asc"
 	}
 
-	query := m.db.Model(&models.Transaksi{}).Where("id_pelanggan = ?", id_pelanggan).Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
+	query := m.db.Model(&models.Transaksi{}).Where("id_pelanggan = ?", id_pelanggan).Preload("DataPelanggan.DataUser").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant")
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -108,7 +107,7 @@ func (m *transaksiRepo) GetAllByPelanggan(id_pelanggan string, q QueryParams) ([
 
 func (m *transaksiRepo) GetByID(id string) (*dto.TransaksiResponse, error) {
 	var data models.Transaksi
-	err := m.db.Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&data, "id = ?", id).Error
+	err := m.db.Preload("DataPelanggan.DataUser").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&data, "id = ?", id).Error
 
 	var response dto.TransaksiResponse
 	if err := copier.Copy(&response, &data); err != nil {
@@ -119,7 +118,7 @@ func (m *transaksiRepo) GetByID(id string) (*dto.TransaksiResponse, error) {
 
 func (m *transaksiRepo) GetByInvoice(invoice string) (*dto.TransaksiResponse, error) {
 	var data models.Transaksi
-	err := m.db.Preload("DataPelanggan").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&data, "no_invoice = ?", invoice).Error
+	err := m.db.Preload("DataPelanggan.DataUser").Preload("DataAlamat").Preload("DataItems.DataProduk").Preload("DataItems.DataVariant").First(&data, "no_invoice = ?", invoice).Error
 
 	var response dto.TransaksiResponse
 	if err := copier.Copy(&response, &data); err != nil {
@@ -234,80 +233,94 @@ func findTrueLayanan(layanan string, pilihanOngkir *[]dto.PilihanOngkirResponse)
 }
 
 func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string, note *string) (*dto.PaymentResponse, error) {
+	data, err := m.KalkulasiTransaksi(items, id_alamat)
+	if err != nil {
+		return nil, err
+	}
+
+	layananOngkir := findTrueLayanan(layanan, data.PilihanOngkir)
+	if layananOngkir == nil {
+		return nil, errors.New("layanan ongkir tidak ditemukan")
+	}
+
+	expiredTime, err := strconv.ParseInt(pkg.GetEnv("PENDING_TIME_MIDTRANS", "24"), 10, 64)
+	if err != nil {
+		expiredTime = 24
+	}
+	pendingTime := time.Now().Add(time.Hour * time.Duration(expiredTime))
+
+	// Siapkan data final untuk Midtrans dan DB
+	noInvoice := fmt.Sprintf("INV-%d-%s", time.Now().Unix(), data.DataPelanggan.NamaPanggilan)
+	totalOngkir := float64(layananOngkir.Harga)
+	grandTotal := data.GrandTotal + totalOngkir
+
+	// Siapkan DTO untuk dikirim ke Midtrans
+	midtransPayload := *data
+	midtransPayload.NoInvoice = &noInvoice
+	midtransPayload.TotalOngkir = totalOngkir
+	midtransPayload.GrandTotal = grandTotal
+	midtransPayload.Notes = note
+	midtransPayload.ExpiredAt = &pendingTime
+	midtransPayload.PilihanOngkir = nil // Tidak perlu dikirim ke Midtrans
+
+	paymentToken, paymentURL, _, err := midtrans.CreatePayment(&midtransPayload)
+	if err != nil {
+		return nil, fmt.Errorf("gagal membuat payment link: %v", err)
+	}
+	
 	tx := m.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
 		}
 	}()
-
-	// Kalkulasi transaksi
-	data, err := m.KalkulasiTransaksi(items, id_alamat)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-
-	// Cari layanan ongkir yang dipilih
-	layananOngkir := findTrueLayanan(layanan, data.PilihanOngkir)
-	if layananOngkir == nil {
-		tx.Rollback()
-		return nil, errors.New("layanan ongkir tidak ditemukan")
-	}
-
-	// Set expired time
-	expiredTime, err := strconv.ParseInt(pkg.GetEnv("PENDING_TIME_MIDTRANS", "24"), 10, 64)
-	if err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	pendingTime := time.Now().Add(time.Hour * time.Duration(expiredTime))
 	
 	// Create transaksi
 	transaksi := models.Transaksi{
 		ID:                uuid.New(),
 		IDPelanggan:       data.IDPelanggan,
 		IDAlamatPelanggan: data.IDAlamatPelanggan,
-		NoInvoice:         fmt.Sprintf("INV-%d-%s", time.Now().Unix(), data.DataPelanggan.NamaPanggilan),
+		NoInvoice:         noInvoice,
 		TotalHarga:        data.TotalHarga,
-		TotalOngkir:       float64(layananOngkir.Harga),
+		TotalOngkir:       totalOngkir,
 		JumlahItem:        data.JumlahItem,
 		BeratTotal:        data.BeratTotal,
 		Pajak:             data.Pajak,
-		GrandTotal:        data.GrandTotal + float64(layananOngkir.Harga),
+		GrandTotal:        grandTotal,
 		Notes:             note,
 		Status:            "Pending",
-		ExpiredAt: 		   &pendingTime,
+		ExpiredAt:         &pendingTime,
+		PaymentToken:      &paymentToken, // Simpan token
+		PaymentURL:        &paymentURL,   // Simpan URL
 	}
 
 	if err := tx.Create(&transaksi).Error; err != nil {
 		tx.Rollback()
-		return nil, errors.New("failed to create transaksi")
+		return nil, errors.New("gagal menyimpan data transaksi")
 	}
 
 	// Create transaksi items
 	for _, item := range data.DataItems {
 		itemdata := &models.TransaksiItem{
-			IDTransaksi: transaksi.ID,
-			IDProduk:    item.IDProduk,
+			IDTransaksi:     transaksi.ID,
+			IDProduk:        item.IDProduk,
 			IDVariantProduk: item.IDVariantProduk,
-			Harga:       item.DataVariant.Harga,
-			Quantity:    item.Quantity,
-			Subtotal:    item.Subtotal,
+			Harga:           item.DataVariant.Harga,
+			Quantity:        item.Quantity,
+			Subtotal:        item.Subtotal,
 		}
 		if err := tx.Create(&itemdata).Error; err != nil {
 			tx.Rollback()
-			return nil, err
+			return nil, errors.New("gagal menyimpan item transaksi")
 		}
 	}
 
-	// Delete cart items
+	// Hapus item dari keranjang
 	if err := tx.Where("id IN ?", items).Delete(&models.TransaksiKeranjangItem{}).Error; err != nil {
-        tx.Rollback()
-        return nil, err
-    }
+		tx.Rollback()
+		return nil, err
+	}
 
-    // Check if cart is empty, delete if so
     var count int64
     if err := tx.Model(&models.TransaksiKeranjangItem{}).Preload("DataKeranjang", "DataKeranjang.id_pelanggan = ?", transaksi.IDPelanggan).Count(&count).Error; err != nil {
         tx.Rollback()
@@ -321,41 +334,14 @@ func (m *transaksiRepo) Create(items []string, id_alamat string, layanan string,
         }
     }
 
-	// Commit transaction
 	if err := tx.Commit().Error; err != nil {
-		return nil, err
-	}
-
-	// Prepare response data untuk Midtrans
-	responseData := *data
-	responseData.ID = transaksi.ID
-	responseData.NoInvoice = &transaksi.NoInvoice
-	responseData.TotalOngkir = float64(layananOngkir.Harga)
-	responseData.GrandTotal = transaksi.GrandTotal
-	responseData.Notes = note
-	responseData.PilihanOngkir = nil
-
-	// Create payment link via Midtrans
-	payment_token, payment_url, id_transaksi, err := midtransService.CreatePayment(&responseData)
-	if err != nil {
-		// Jika gagal buat payment, rollback transaksi
-		m.db.Delete(&models.Transaksi{}, "id = ?", transaksi.ID)
-		return nil, fmt.Errorf("gagal membuat payment link: %v", err)
-	}
-
-	updateData := map[string]any{
-		"payment_token": payment_token,
-		"payment_url": payment_url,
-	}
-
-	if err := m.db.Model(&models.Transaksi{}).Where("id = ?", transaksi.ID).Updates(updateData).Error; err != nil {
-		return nil, fmt.Errorf("gagal memperbarui transaksi: %v", err)
+		return nil, fmt.Errorf("gagal commit transaksi ke database: %v", err)
 	}
 
 	paymentResponse := &dto.PaymentResponse{
-		IDTransaksi:  id_transaksi,
-		PaymentToken: payment_token,
-		PaymentURL:   payment_url,
+		IDTransaksi:  transaksi.NoInvoice,
+		PaymentToken: paymentToken,
+		PaymentURL:   paymentURL,
 	}
 
 	return paymentResponse, nil

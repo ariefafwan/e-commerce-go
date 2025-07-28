@@ -15,10 +15,10 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 		userRepo := repositories.NewuserRepository(db)
 		authController := controllers.NewAuthController(userRepo)
 
-		router.POST("/login", authController.Login)
-		router.POST("/register", authController.Register)
-		router.POST("/refresh", authController.Refresh)
-		router.POST("/logout", authController.Logout)
+		api.POST("/login", authController.Login)
+		api.POST("/register", authController.Register)
+		api.POST("/refresh", authController.Refresh)
+		api.POST("/logout", authController.Logout)
 
 		rajaOngkirRepo := repositories.NewRajaOngkirRepository(db)
 		rajaOngkirController := controllers.NewRajaOngkirController(rajaOngkirRepo)
@@ -171,6 +171,6 @@ func SetupRouters(router *gin.Engine, db *gorm.DB) {
 			transaksi.GET("/", transaksiController.GetAll)
 		}
 
-		router.POST("/payment/midtrans/callback", transaksiController.MidtransCallback)
+		api.POST("/payment/midtrans/callback", transaksiController.MidtransCallback)
 	}
 }
