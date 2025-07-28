@@ -152,6 +152,7 @@ func (t *TransaksiController) UpdateStatus(c *gin.Context) {
 	helpers.Success(c, http.StatusOK, nil, "Success")
 }
 
+// dokumentasi ada di : https://doc-midtrans.dev.fleava.com/en/after-payment/http-notification
 func (t *TransaksiController) MidtransCallback(c *gin.Context) {
 	var callbackData struct {
 		OrderID           string `json:"order_id"`

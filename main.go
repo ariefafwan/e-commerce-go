@@ -12,7 +12,6 @@ func main() {
 	pkg.LoadConfig()
 	pkg.ConnectDB()
 	pkg.InitMidtrans()
-	pkg.GetSnapClient()
 	pkg.InitCloudinary()
 
 	r := gin.Default()

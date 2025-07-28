@@ -14,6 +14,7 @@ func getSnapClient() *snap.Client {
 }
 // var recoreapiclient = pkg.CoreApiClient
 
+// dokumentasi ada di : https://docs.midtrans.com/docs/snap-snap-integration-guide
 func CreatePayment(transaksi *dto.TransaksiResponse) (payment_token string, payment_url string, id_transaksi string, error error) {
 	// Format item details
 	var itemDetails []midtrans.ItemDetails

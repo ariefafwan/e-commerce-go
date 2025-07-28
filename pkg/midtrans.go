@@ -21,7 +21,6 @@ func InitMidtrans() {
 		environment = midtrans.Production
 	}
 	
-	// ✅ PERBAIKAN TERBAIK: Buat client baru dengan pointer
 	SnapClient = &snap.Client{}
 	SnapClient.New(serverKey, environment)
 	
@@ -31,7 +30,6 @@ func InitMidtrans() {
 	log.Println("Midtrans clients initialized successfully")
 }
 
-// ✅ Fungsi getter yang aman
 func GetSnapClient() *snap.Client {
 	if SnapClient == nil {
 		log.Println("Warning: SnapClient not initialized, initializing now...")
